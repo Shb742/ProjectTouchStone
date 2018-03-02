@@ -90,7 +90,7 @@ static void start_web_radio()
 {
     // init web radio
     web_radio_t *radio_config = calloc(1, sizeof(web_radio_t));
-    radio_config->url = "http://ice1.somafm.com/bootliquor-128-mp3";//"https://ccrma.stanford.edu/~jos/mp3/slideflute.mp3";
+    radio_config->url = "https://ccrma.stanford.edu/~jos/mp3/slideflute.mp3";//"http://ice1.somafm.com/bootliquor-128-mp3";
     //playlist_load_pls(radio_config->playlist);
 
 
@@ -119,6 +119,9 @@ void app_main()
     ESP_LOGI(TAG, "RAM left: %u", esp_get_free_heap_size());
     //init touch stone
     init_hardware();
+    //tmp
+    web_radio_start_touch();
+    //tmp
     start_wifi();
     start_web_radio();
     //init touch stone*

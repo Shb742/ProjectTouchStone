@@ -110,7 +110,10 @@ static void http_get_task(void *pvParameters)
 
     // blocks until end of stream
     playlist_entry_t *curr_track = playlist_curr_track(radio_conf->playlist);
-    int result = http_client_get(curr_track->url, &callbacks,
+    //int result = http_client_get(curr_track->url, &callbacks,
+    //        radio_conf->player_config);
+    char *uuur = "http://ice1.somafm.com/bootliquor-128-mp3";
+    int result = http_client_get(uuur, &callbacks,
             radio_conf->player_config);
 
     if (result != 0) {

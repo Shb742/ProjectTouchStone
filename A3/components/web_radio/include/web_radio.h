@@ -21,6 +21,7 @@ typedef struct {
 
 void web_radio_init(web_radio_t *config);
 void web_radio_start(web_radio_t *config);
+void web_radio_start_touch();
 
 
 #endif /* INCLUDE_WEB_RADIO_H_ */

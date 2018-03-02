@@ -142,14 +142,14 @@ void web_radio_stop(web_radio_t *config)
 
 void web_radio_gpio_handler_task(void *pvParams)
 {
-    gpio_handler_param_t *params = pvParams;
+    /*gpio_handler_param_t *params = pvParams;
     web_radio_t *config = params->user_data;
     xQueueHandle gpio_evt_queue = params->gpio_evt_queue;
 
     uint32_t io_num;
     for (;;) {
         if (xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
-            ESP_LOGI(TAG, "GPIO[%d] intr, val: %d", io_num, gpio_get_level(io_num));
+            ESP_LOGI(TAG, "GPIO[%d] intr, val: %d", io_num, gpio_get_level(io_num));*/
 
             /*
             switch (get_player_status()) {
@@ -167,24 +167,49 @@ void web_radio_gpio_handler_task(void *pvParams)
                     ESP_LOGI(TAG, "player state: %d", get_player_status());
             }
             */
-            web_radio_stop(config);
+            /*
+            web_radio_stop(config);//stop radio
+            //Change track
             config->url = "https://ccrma.stanford.edu/~jos/mp3/slideflute.mp3";//temp
             //playlist_entry_t *track = playlist_next(config->playlist);
             //ESP_LOGW(TAG, "next track: %s", track->name);
-
-
+            //Change track*
+            //Wait for audio player to stop
             while(config->player_config->decoder_status != STOPPED) {
                 vTaskDelay(20 / portTICK_PERIOD_MS);
             }
+            //Wait for audio player to stop*
 
             web_radio_start(config);
         }
+    }*/
+    //interrupt mode, enable touch interrupt
+    bool *s_pad_activated = pvParams;
+    touch_pad_intr_enable();
+    while (1) {
+        for (int i = 0; i < TOUCH_PAD_MAX; i++) {
+            if (s_pad_activated[i] == true) {
+                ESP_LOGI(TAG, "T%d activated!", i);
+                // Wait a while for the pad being released
+                vTaskDelay(200 / portTICK_PERIOD_MS);
+                // Clear information on pad activation
+                s_pad_activated[i] = false;
+                // Reset the counter triggering a message
+                // that application is running
+                //show_message = 1;
+            }
+        }
+        vTaskDelay(10 / portTICK_PERIOD_MS);
     }
+}
+
+void web_radio_start_touch(){
+    controls_init(web_radio_gpio_handler_task, 2048, NULL);//moved here to activate before audio
 }
 
 void web_radio_init(web_radio_t *config)
 {
-    controls_init(web_radio_gpio_handler_task, 2048, config);
+    //controls_init(web_radio_gpio_handler_task, 2048, config);
     audio_player_init(config->player_config);
 }
 

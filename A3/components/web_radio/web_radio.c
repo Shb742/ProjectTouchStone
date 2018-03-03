@@ -26,6 +26,11 @@
 #include "audio_player.h"
 #include "spiram_fifo.h"
 
+#include "driver/touch_pad.h"
+#include "soc/rtc_cntl_reg.h"
+#include "soc/sens_reg.h"
+#include <stdio.h>
+
 #define TAG "web_radio"
 
 typedef enum
@@ -86,6 +91,7 @@ static int on_headers_complete_cb(http_parser *parser)
     player_config->media_stream->eof = false;
     ESP_LOGI(TAG, "starting player");
     audio_player_start(player_config);
+    touch_pad_intr_enable();//Enable touch
 
     return 0;
 }
@@ -163,6 +169,7 @@ static void http_get_task(void *pvParameters)
 void web_radio_start(web_radio_t *config)
 {
     // start reader task
+    touch_pad_intr_disable();//disable touch
     xTaskCreatePinnedToCore(&http_get_task, "http_get_task", 10240, config, 20,&HttpHandle, 0);
     //xTaskCreate(&http_get_task, "http_get_task", 8192, config, 5, NULL);
 

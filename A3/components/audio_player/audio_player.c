@@ -140,16 +140,19 @@ void audio_player_start(player_t *player)
 
 void audio_player_stop(player_t *player)
 {
-    //if( DecoderHandle != NULL )
-    //{
-        player->decoder_command = CMD_STOP;
-        ESP_LOGI(TAG,"Stopped Decoder Task");
-        //vTaskDelete( DecoderHandle );
-        //ESP_LOGI(TAG,"Deleted Decoder Task");
-    //}
+    //Clean up
+    player->decoder_command = CMD_STOP;
+    ESP_LOGI(TAG,"Stopped Decoder Task");
     renderer_stop();
     player_instance->command = CMD_STOP;
     player_status = STOPPED;
+    //Clean buffer
+    char tmp[1];
+    while (spiRamFifoFill() > 0){
+        spiRamFifoRead(tmp,1);
+    }
+    ESP_LOGI(TAG,"Fifo Cleared");
+     //Clean up*
 }
 
 component_status_t get_player_status()

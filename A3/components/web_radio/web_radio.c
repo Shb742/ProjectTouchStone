@@ -24,6 +24,7 @@
 #include "playerconfig.h"
 #include "audio_renderer.h"
 #include "audio_player.h"
+#include "spiram_fifo.h"
 
 #define TAG "web_radio"
 
@@ -36,7 +37,7 @@ static header_field_t curr_header_field = 0;
 static content_type_t content_type = AUDIO_MPEG;//hack default type(for some reason the content-type feild stopped working..)
 static bool headers_complete = false;
 web_radio_t *radio_config;
-//char oldurl[100];
+char *Default = "https://ccrma.stanford.edu/~jos/mp3/slideflute.mp3";
 TaskHandle_t HttpHandle = NULL;
 
 static int on_header_field_cb(http_parser *parser, const char *at, size_t length)
@@ -109,6 +110,16 @@ static int on_message_complete_cb(http_parser *parser)
     return 0;
 }
 
+
+void web_radio_stop(web_radio_t *config)
+{
+    ESP_LOGI(TAG, "RAM left %d", esp_get_free_heap_size());
+
+    audio_player_stop(config->player_config);
+    // reader task terminates itself
+}
+
+
 static void http_get_task(void *pvParameters)
 {
     web_radio_t *radio_conf = pvParameters;
@@ -132,6 +143,16 @@ static void http_get_task(void *pvParameters)
         ESP_LOGE(TAG, "http_client_get error");
     } else {
         ESP_LOGI(TAG, "http_client_get completed");
+        //Wait to finish playing
+        int bytes_in_buf = spiRamFifoFill();
+        while (bytes_in_buf>0){
+            ESP_LOGI(TAG, "Left:%d",bytes_in_buf);
+            vTaskDelay(100 / portTICK_PERIOD_MS);
+            bytes_in_buf = spiRamFifoFill();
+        }
+        web_radio_stop(radio_config);
+        ESP_LOGI(TAG, "audio completed");
+        //Wait to finish playing
     }
     // ESP_LOGI(TAG, "http_client_get stack: %d\n", uxTaskGetStackHighWaterMark(NULL));
 
@@ -144,14 +165,6 @@ void web_radio_start(web_radio_t *config)
     xTaskCreatePinnedToCore(&http_get_task, "http_get_task", 10240, config, 20,&HttpHandle, 0);
     //xTaskCreate(&http_get_task, "http_get_task", 8192, config, 5, NULL);
 
-}
-
-void web_radio_stop(web_radio_t *config)
-{
-    ESP_LOGI(TAG, "RAM left %d", esp_get_free_heap_size());
-
-    audio_player_stop(config->player_config);
-    // reader task terminates itself
 }
 
 void web_radio_init(web_radio_t *config)
@@ -191,47 +204,6 @@ void start_web_radio(char *urll)
 
 void web_radio_gpio_handler_task(void *pvParams)
 {
-    /*gpio_handler_param_t *params = pvParams;
-    web_radio_t *config = params->user_data;
-    xQueueHandle gpio_evt_queue = params->gpio_evt_queue;
-
-    uint32_t io_num;
-    for (;;) {
-        if (xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
-            ESP_LOGI(TAG, "GPIO[%d] intr, val: %d", io_num, gpio_get_level(io_num));*/
-
-            /*
-            switch (get_player_status()) {
-                case RUNNING:
-                    ESP_LOGI(TAG, "stopping player");
-                    web_radio_stop(config);
-                    break;
-
-                case STOPPED:
-                    ESP_LOGI(TAG, "starting player");
-                    web_radio_start(config);
-                    break;
-
-                default:
-                    ESP_LOGI(TAG, "player state: %d", get_player_status());
-            }
-            */
-            /*
-            web_radio_stop(config);//stop radio
-            //Change track
-            config->url = "https://ccrma.stanford.edu/~jos/mp3/slideflute.mp3";//temp
-            //playlist_entry_t *track = playlist_next(config->playlist);
-            //ESP_LOGW(TAG, "next track: %s", track->name);
-            //Change track*
-            //Wait for audio player to stop
-            while(config->player_config->decoder_status != STOPPED) {
-                vTaskDelay(20 / portTICK_PERIOD_MS);
-            }
-            //Wait for audio player to stop*
-
-            web_radio_start(config);
-        }
-    }*/
     //interrupt mode, enable touch interrupt
     bool *s_pad_pressed = pvParams;
     touch_pad_intr_enable();
@@ -244,43 +216,54 @@ void web_radio_gpio_handler_task(void *pvParams)
                     case 5:
                         //Play/Pause
                         if (get_player_status() == RUNNING){
-                            //Stop appropriately
-                            //Stop http
-                            if( HttpHandle != NULL )
-                             {
-                                 //vTaskDelete( HttpHandle );
-                                 ESP_LOGI(TAG,"Deleted HTTP");
-                             }
-                             //Stop http*
-                            //audio_player_stop();
-                            //Copy last url
-                            //ESP_LOGI(TAG, "radio_config url :%s", radio_config-> url);
-                            //strcpy(oldurl, radio_config-> url);
-                           // ESP_LOGI(TAG, "----radio_config stored url :%s----", oldurl);
-                            //Copy last url*
+                            ESP_LOGI(TAG, "\nStop\n");
                             web_radio_stop(radio_config);
-                            //web_radio_destroy(radio_config);
-                            //free(radio_config->player_config->media_stream);
-                            //free(radio_config->player_config);
-                            //free(radio_config);
-                            //Stop appropriately*
-                        }else if(radio_config == NULL){//if(oldurl[0] == 'h'){
-                            start_web_radio("https://ccrma.stanford.edu/~jos/mp3/slideflute.mp3");
+                        }else if(radio_config == NULL){
+                            ESP_LOGI(TAG, "\nStart\n");
+                            start_web_radio(Default);//Default message i.e:-"No messages" (or the previous message etc)
                         }
                         else{
+                            ESP_LOGI(TAG, "\nStart\n");
                             web_radio_start(radio_config);
-                            //start_web_radio("https://ccrma.stanford.edu/~jos/mp3/slideflute.mp3");//Default message i.e:-"No messages" (or the previous message etc)
                         }
                         break;
                         //Play/Pause*
                     case 6:
                         //Next
                         ESP_LOGI(TAG, "\nNEXT\n");
+                        if(radio_config == NULL){
+                            start_web_radio(Default);//Default message i.e:-"No messages" (or the previous message etc)
+                        }
+                        else{
+                            //Stop what it is playing
+                            if (get_player_status() == RUNNING){
+                                web_radio_stop(radio_config);
+                            }
+                            //Stop what it is playing*
+                            //Get Next message and change radio config url
+                            //TODO
+                            //Get Next message and change radio config url*
+                            web_radio_start(radio_config);
+                        }
                         break;
                         //Next*
                     case 4:
                         //Back
                         ESP_LOGI(TAG, "\nBACK\n");
+                        if(radio_config == NULL){
+                            start_web_radio(Default);//Default message i.e:-"No messages" (or the previous message etc)
+                        }
+                        else{
+                            //Stop what it is playing
+                            if (get_player_status() == RUNNING){
+                                web_radio_stop(radio_config);
+                            }
+                            //Stop what it is playing*
+                            //Get Previous message and change radio config url
+                            //TODO
+                            //Get Previous message and change radio config url*
+                            web_radio_start(radio_config);
+                        }
                         break;
                         //Back*
                     default:
@@ -288,12 +271,9 @@ void web_radio_gpio_handler_task(void *pvParams)
                 }
                 // Clear information on pad activation
                 s_pad_pressed[i] = false;
-                // Reset the counter triggering a message
-                // that application is running
-                //show_message = 1;
             }
         }
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        vTaskDelay(100 / portTICK_PERIOD_MS);
     }
 }
 

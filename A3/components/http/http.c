@@ -306,7 +306,6 @@ int http_client_get(char *uri, http_parser_settings *callbacks, void *user_data)
         //HTTP
     }
     exit:
-    free(parser.data);
     mbedtls_ssl_session_reset(&ssl);
     mbedtls_net_free(&server_fd);
     free(url);

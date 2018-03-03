@@ -132,6 +132,7 @@ static void http_get_task(void *pvParameters)
 {
     //disable heartbeats on touchstone library
     ts_toggle_heartbeat_allowed(0);
+    while(ts_heartbeat_running()) vTaskDelay(100/portTICK_PERIOD_MS);
     web_radio_t *radio_conf = pvParameters;
 
     /* configure callbacks */
@@ -259,7 +260,7 @@ void web_radio_gpio_handler_task(void *pvParams)
                             ESP_LOGI(TAG, "next_message returned %d", ts_next_message());
                             if(ts_retrieve_current_message(urlbuf) != 0) {
                                 ESP_LOGE(TAG, "failed to retrieve message.");
-                                return; //no no no
+                                break; //no no no
                             }
                             //Get Next message and change radio config url*
                             ESP_LOGI(TAG, "\nWaiting for player to be ready\n");
@@ -287,7 +288,7 @@ void web_radio_gpio_handler_task(void *pvParams)
                             ESP_LOGI(TAG, "prev_message returned %d", ts_prev_message());
                             if(ts_retrieve_current_message(urlbuf) != 0) {
                                 ESP_LOGE(TAG, "failed to retrieve message.");
-                                return;
+                                break;
                             }
                             //Get Previous message and change radio config url*
                             ESP_LOGI(TAG, "\nWaiting for player to be ready\n");

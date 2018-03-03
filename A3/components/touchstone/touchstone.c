@@ -26,7 +26,7 @@ extern const uint8_t ts_ca_pem_start[] asm("_binary_ts_ca_pem_start");
 extern const uint8_t ts_ca_pem_end[]   asm("_binary_ts_ca_pem_end");
 
 char jbuf[2048]; //2kb maximum payload
-int buf_offset, msg_offset = 0, msg_len = 0;
+int buf_offset, msg_offset = 0, msg_len = 0, ts_hb_running = 0;
 
 typedef struct ts_m_node ts_m_node;
 
@@ -107,12 +107,15 @@ void ts_toggle_heartbeat_allowed(int state) {
     ts_is_hb_allowed = state;
 }
 
+int ts_heartbeat_running() {return ts_hb_running;}
+
 void ts_heartbeat(){
     char endpoint[50], id[20];
     get_hardware_id(id);
     sprintf(endpoint, "device/%s/ping", id);
     while(1){
         if(ts_is_hb_allowed){
+            ts_hb_running = 1;
             cJSON *obj = make_request(endpoint);
             if(ts_check_error(obj) == 0) {
                 ESP_LOGI(TAG, "query success, enumerating");
@@ -134,6 +137,7 @@ void ts_heartbeat(){
             }
             cJSON_Delete(obj);
             ESP_LOGI(TAG, "next heartbeat in 15 sec, ram=%d", esp_get_free_heap_size());
+            ts_hb_running = 0;
         } else {
             ESP_LOGI(TAG, "heartbeat not allowed at this time. next in 15sec");
         }

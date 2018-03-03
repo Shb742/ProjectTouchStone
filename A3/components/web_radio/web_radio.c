@@ -119,10 +119,10 @@ static int on_message_complete_cb(http_parser *parser)
 
 void web_radio_stop(web_radio_t *config)
 {
+    touch_pad_intr_disable();//disable touch
     ESP_LOGI(TAG, "RAM left %d", esp_get_free_heap_size());
-
-    audio_player_stop(config->player_config);
-    // reader task terminates itself
+    audio_player_stop(config->player_config);//Stop playing
+    touch_pad_intr_enable();//Enable touch
 }
 
 

@@ -44,9 +44,9 @@ typedef struct {
 
 component_status_t get_player_status();
 
-void audio_player_init(player_t *player_config);
-void audio_player_start();
-void audio_player_stop();
+void audio_player_init(player_t *player);
+void audio_player_start(player_t *player);
+void audio_player_stop(player_t *player);
 void audio_player_destroy();
 
 

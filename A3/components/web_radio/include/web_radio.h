@@ -10,6 +10,7 @@
 
 #include "audio_player.h"
 
+
 typedef struct {
 
 } radio_controls_t;
@@ -22,6 +23,7 @@ typedef struct {
 void web_radio_init(web_radio_t *config);
 void web_radio_start(web_radio_t *config);
 void web_radio_start_touch();
+void start_web_radio(char *urll);
 
 
 #endif /* INCLUDE_WEB_RADIO_H_ */

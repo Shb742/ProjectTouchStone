@@ -264,6 +264,7 @@ void renderer_start()
 
     // buffer might contain noise
     i2s_zero_dma_buffer(renderer_instance->i2s_num);
+    ESP_LOGI(TAG, "Started I2S");
 }
 
 void renderer_stop()
@@ -273,6 +274,7 @@ void renderer_stop()
 
     renderer_status = STOPPED;
     i2s_stop(renderer_instance->i2s_num);
+    ESP_LOGI(TAG, "Stopped I2S");
 }
 
 void renderer_destroy()

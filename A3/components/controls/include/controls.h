@@ -13,8 +13,10 @@ typedef struct {
     void *user_data;
 } gpio_handler_param_t;
 
+//static bool s_pad_activated[TOUCH_PAD_MAX];
 
 void controls_init(TaskFunction_t gpio_handler_task, const uint16_t usStackDepth, void *user_data);
 void controls_destroy();
+void CheckTouch();
 
 #endif

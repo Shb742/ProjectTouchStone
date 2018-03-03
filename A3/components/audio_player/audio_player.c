@@ -25,6 +25,7 @@
 
 static player_t *player_instance = NULL;
 static component_status_t player_status = UNINITIALIZED;
+TaskHandle_t DecoderHandle = NULL;
 
 static int start_decoder_task(player_t *player)
 {
@@ -60,8 +61,7 @@ static int start_decoder_task(player_t *player)
             return -1;
     }
 
-    if (xTaskCreatePinnedToCore(task_func, task_name, stack_depth, player,
-    PRIO_MAD, NULL, 1) != pdPASS) {
+    if (xTaskCreatePinnedToCore(task_func, task_name, stack_depth, player,PRIO_MAD, &DecoderHandle, 1) != pdPASS) {
         ESP_LOGE(TAG, "ERROR creating decoder task! Out of memory?");
         return -1;
     } else {
@@ -85,6 +85,7 @@ int audio_stream_consumer(const char *recv_buf, ssize_t bytes_read,
     if(player->command == CMD_STOP) {
         player->decoder_command = CMD_STOP;
         player->command = CMD_NONE;
+        ESP_LOGI(TAG, "Stopping");
         return -1;
     }
 
@@ -129,17 +130,26 @@ void audio_player_destroy()
     player_status = UNINITIALIZED;
 }
 
-void audio_player_start()
+void audio_player_start(player_t *player)
 {
+    player->decoder_command = CMD_NONE;
+    player->command = CMD_NONE;
     renderer_start();
     player_status = RUNNING;
 }
 
-void audio_player_stop()
+void audio_player_stop(player_t *player)
 {
+    //if( DecoderHandle != NULL )
+    //{
+        player->decoder_command = CMD_STOP;
+        ESP_LOGI(TAG,"Stopped Decoder Task");
+        //vTaskDelete( DecoderHandle );
+        //ESP_LOGI(TAG,"Deleted Decoder Task");
+    //}
     renderer_stop();
     player_instance->command = CMD_STOP;
-    // player_status = STOPPED;
+    player_status = STOPPED;
 }
 
 component_status_t get_player_status()

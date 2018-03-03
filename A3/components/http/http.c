@@ -32,6 +32,7 @@
 
 
 
+
 #define TAG "http_client"
 
 
@@ -50,7 +51,6 @@
 */
 extern const uint8_t server_root_cert_pem_start[] asm("_binary_server_root_cert_pem_start");
 extern const uint8_t server_root_cert_pem_end[]   asm("_binary_server_root_cert_pem_end");
-
 
 int http_client_get(char *uri, http_parser_settings *callbacks, void *user_data)
 {
@@ -123,88 +123,88 @@ int http_client_get(char *uri, http_parser_settings *callbacks, void *user_data)
         char portstr[10];
         sprintf(portstr, "%u", url->port);
         //Perform connection
-        while(1) {
-            mbedtls_net_init(&server_fd);
-            ESP_LOGI(TAG, "Connecting to %s:%s...", url->host,portstr);
-            if ((ret = mbedtls_net_connect(&server_fd, url->host,portstr, MBEDTLS_NET_PROTO_TCP)) != 0)
+        //while(1) {
+        mbedtls_net_init(&server_fd);
+        ESP_LOGI(TAG, "Connecting to %s:%s...", url->host,portstr);
+        if ((ret = mbedtls_net_connect(&server_fd, url->host,portstr, MBEDTLS_NET_PROTO_TCP)) != 0)
+        {
+            ESP_LOGE(TAG, "mbedtls_net_connect returned -%x", -ret);
+            goto exit;
+        }
+        ESP_LOGI(TAG, "Connected.");
+        mbedtls_ssl_set_bio(&ssl, &server_fd, mbedtls_net_send, mbedtls_net_recv, NULL);
+        ESP_LOGI(TAG, "Performing the SSL/TLS handshake...");
+        while ((ret = mbedtls_ssl_handshake(&ssl)) != 0)
+        {
+            if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE)
             {
-                ESP_LOGE(TAG, "mbedtls_net_connect returned -%x", -ret);
+                ESP_LOGE(TAG, "mbedtls_ssl_handshake returned -0x%x", -ret);
                 goto exit;
             }
-            ESP_LOGI(TAG, "Connected.");
-            mbedtls_ssl_set_bio(&ssl, &server_fd, mbedtls_net_send, mbedtls_net_recv, NULL);
-            ESP_LOGI(TAG, "Performing the SSL/TLS handshake...");
-            while ((ret = mbedtls_ssl_handshake(&ssl)) != 0)
-            {
-                if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE)
-                {
-                    ESP_LOGE(TAG, "mbedtls_ssl_handshake returned -0x%x", -ret);
-                    goto exit;
-                }
-            }
-            ESP_LOGI(TAG, "Verifying peer X.509 certificate...");
-            if ((flags = mbedtls_ssl_get_verify_result(&ssl)) != 0)
-            {
-                /* In real life, we probably want to close connection if ret != 0 */
-                ESP_LOGW(TAG, "Failed to verify peer certificate!");
-                bzero(buf, sizeof(buf));
-                mbedtls_x509_crt_verify_info(buf, sizeof(buf), "  ! ", flags);
-                ESP_LOGW(TAG, "verification info: %s", buf);
-            }
-            else {
-                ESP_LOGI(TAG, "Certificate verified.");
-            }
+        }
+        ESP_LOGI(TAG, "Verifying peer X.509 certificate...");
+        if ((flags = mbedtls_ssl_get_verify_result(&ssl)) != 0)
+        {
+            /* In real life, we probably want to close connection if ret != 0 */
+            ESP_LOGW(TAG, "Failed to verify peer certificate!");
+            bzero(buf, sizeof(buf));
+            mbedtls_x509_crt_verify_info(buf, sizeof(buf), "  ! ", flags);
+            ESP_LOGW(TAG, "verification info: %s", buf);
+        }
+        else {
+            ESP_LOGI(TAG, "Certificate verified.");
+        }
 
-            ESP_LOGI(TAG, "Cipher suite is %s", mbedtls_ssl_get_ciphersuite(&ssl));
+        ESP_LOGI(TAG, "Cipher suite is %s", mbedtls_ssl_get_ciphersuite(&ssl));
 
-            ESP_LOGI(TAG, "Writing HTTP request...");
-            char *request;
-            if(asprintf(&request, "GET %s HTTP/1.0\r\nHost: %s:%d\r\nUser-Agent: ESP32\r\nAccept: */*\r\n\r\n", url->path, url->host, url->port) < 0)
-            {
-                return ESP_FAIL;
+        ESP_LOGI(TAG, "Writing HTTP request...");
+        char *request;
+        if(asprintf(&request, "GET %s HTTP/1.0\r\nHost: %s:%d\r\nUser-Agent: ESP32\r\nAccept: */*\r\n\r\n", url->path, url->host, url->port) < 0)
+        {
+            return ESP_FAIL;
+        }
+        ESP_LOGI(TAG, "requesting %s", request);
+        size_t written_bytes = 0;
+        do {
+            ret = mbedtls_ssl_write(&ssl,(const unsigned char *)request + written_bytes,strlen(request) - written_bytes);
+            if (ret >= 0) {
+                ESP_LOGI(TAG, "%d bytes written", ret);
+                written_bytes += ret;
+            } else if (ret != MBEDTLS_ERR_SSL_WANT_WRITE && ret != MBEDTLS_ERR_SSL_WANT_READ) {
+                ESP_LOGE(TAG, "mbedtls_ssl_write returned -0x%x", -ret);
+                goto exit;
             }
-            ESP_LOGI(TAG, "requesting %s", request);
-            size_t written_bytes = 0;
-            do {
-                ret = mbedtls_ssl_write(&ssl,(const unsigned char *)request + written_bytes,strlen(request) - written_bytes);
-                if (ret >= 0) {
-                    ESP_LOGI(TAG, "%d bytes written", ret);
-                    written_bytes += ret;
-                } else if (ret != MBEDTLS_ERR_SSL_WANT_WRITE && ret != MBEDTLS_ERR_SSL_WANT_READ) {
-                    ESP_LOGE(TAG, "mbedtls_ssl_write returned -0x%x", -ret);
-                    goto exit;
-                }
-            } while(written_bytes < strlen(request));
-            ESP_LOGI(TAG, "Reading HTTP response...");
-            /* Read HTTP response */
-            char recv_buf[64];
+        } while(written_bytes < strlen(request));
+        ESP_LOGI(TAG, "Reading HTTP response...");
+        /* Read HTTP response */
+        char recv_buf[64];
+        bzero(recv_buf, sizeof(recv_buf));
+        ssize_t recved;
+
+        /* intercept on_headers_complete() */
+
+        /* parse response */
+        http_parser parser;
+        http_parser_init(&parser, HTTP_RESPONSE);
+        parser.data = user_data;
+
+        esp_err_t nparsed = 0;
+        do {
             bzero(recv_buf, sizeof(recv_buf));
-            ssize_t recved;
+            recved = mbedtls_ssl_read(&ssl, (unsigned char *)recv_buf, sizeof(recv_buf)-1);
 
-            /* intercept on_headers_complete() */
+            // using http parser causes stack overflow somtimes - disable for now
+            nparsed = http_parser_execute(&parser, callbacks, recv_buf, recved);
 
-            /* parse response */
-            http_parser parser;
-            http_parser_init(&parser, HTTP_RESPONSE);
-            parser.data = user_data;
+            // invoke on_body cb directly
+            // nparsed = callbacks->on_body(&parser, recv_buf, recved);
+        } while(recved > 0 && nparsed >= 0);
+        mbedtls_ssl_close_notify(&ssl);
+        exit:
+            mbedtls_ssl_session_reset(&ssl);
+            mbedtls_net_free(&server_fd);
 
-            esp_err_t nparsed = 0;
-            do {
-                bzero(recv_buf, sizeof(recv_buf));
-                recved = mbedtls_ssl_read(&ssl, (unsigned char *)recv_buf, sizeof(recv_buf)-1);
-
-                // using http parser causes stack overflow somtimes - disable for now
-                nparsed = http_parser_execute(&parser, callbacks, recv_buf, recved);
-
-                // invoke on_body cb directly
-                // nparsed = callbacks->on_body(&parser, recv_buf, recved);
-            } while(recved > 0 && nparsed >= 0);
-            mbedtls_ssl_close_notify(&ssl);
-            exit:
-                mbedtls_ssl_session_reset(&ssl);
-                mbedtls_net_free(&server_fd);
-
-         }
+        //}
 
     }else{
         //HTTP

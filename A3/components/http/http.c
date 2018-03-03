@@ -102,7 +102,7 @@ void init_https(url_t *url){
     if((ret = mbedtls_ssl_config_defaults(&conf,MBEDTLS_SSL_IS_CLIENT,MBEDTLS_SSL_TRANSPORT_STREAM,MBEDTLS_SSL_PRESET_DEFAULT)) != 0)
     {
         ESP_LOGE(TAG, "mbedtls_ssl_config_defaults returned %d", ret);
-        goto exit;
+        goto exit_init;
     }
     /* MBEDTLS_SSL_VERIFY_OPTIONAL is bad for security, in this example it will print a warning if CA verification fails but it will continue to connect. You should consider using MBEDTLS_SSL_VERIFY_REQUIRED in your own code.*/
     mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_OPTIONAL);
@@ -114,11 +114,10 @@ void init_https(url_t *url){
     if ((ret = mbedtls_ssl_setup(&ssl, &conf)) != 0)
     {
         ESP_LOGE(TAG, "mbedtls_ssl_setup returned -0x%x\n\n", -ret);
-        goto exit;
+        goto exit_init;
     }
-    exit:
+    exit_init:
     mbedtls_ssl_session_reset(&ssl);
-    mbedtls_net_free(&server_fd);
 }
 
 

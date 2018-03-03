@@ -95,7 +95,8 @@ static int on_body_cb(http_parser* parser, const char *at, size_t length)
     //printf("%.*s", length, at);
     //if (get_player_status() == RUNNING){
     //ESP_LOGI(TAG, "Playing");
-    return audio_stream_consumer(at, length, parser->data);
+    if(get_player_status() != RUNNING) return -1;
+    else return audio_stream_consumer(at, length, parser->data);
     //}
     //return -1;
 }

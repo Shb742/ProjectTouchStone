@@ -25,6 +25,7 @@
 #include "audio_renderer.h"
 #include "audio_player.h"
 #include "spiram_fifo.h"
+#include "touchstone.h"
 
 #define TAG "web_radio"
 
@@ -38,6 +39,7 @@ static content_type_t content_type = AUDIO_MPEG;//hack default type(for some rea
 static bool headers_complete = false;
 web_radio_t *radio_config;
 char *Default = "https://ccrma.stanford.edu/~jos/mp3/slideflute.mp3";
+char urlbuf[100];
 TaskHandle_t HttpHandle = NULL;
 
 static int on_header_field_cb(http_parser *parser, const char *at, size_t length)
@@ -122,6 +124,8 @@ void web_radio_stop(web_radio_t *config)
 
 static void http_get_task(void *pvParameters)
 {
+    //disable heartbeats on touchstone library
+    ts_toggle_heartbeat_allowed(0);
     web_radio_t *radio_conf = pvParameters;
 
     /* configure callbacks */
@@ -155,7 +159,7 @@ static void http_get_task(void *pvParameters)
         //Wait to finish playing
     }
     // ESP_LOGI(TAG, "http_client_get stack: %d\n", uxTaskGetStackHighWaterMark(NULL));
-
+    ts_toggle_heartbeat_allowed(1);
     vTaskDelete(NULL);
 }
 
@@ -181,11 +185,12 @@ void web_radio_destroy(web_radio_t *config)
 
 
 
-void start_web_radio(char *urll)
+void start_web_radio()
 {
     // init web radio
     radio_config = calloc(1, sizeof(web_radio_t));
-    radio_config->url = urll;//"http://ice1.somafm.com/bootliquor-128-mp3";
+    if(ts_retrieve_current_message(urlbuf) != 0) strcpy(urlbuf, Default); //if failed to retrieve
+    radio_config->url = urlbuf; //"http://ice1.somafm.com/bootliquor-128-mp3";
     //playlist_load_pls(radio_config->playlist);
 
 
@@ -220,11 +225,12 @@ void web_radio_gpio_handler_task(void *pvParams)
                             web_radio_stop(radio_config);
                         }else if(radio_config == NULL){
                             ESP_LOGI(TAG, "\nStart\n");
-                            start_web_radio(Default);//Default message i.e:-"No messages" (or the previous message etc)
+                            start_web_radio();//Default message i.e:-"No messages" (or the previous message etc)
                         }
                         else{
                             ESP_LOGI(TAG, "\nStart\n");
-                            web_radio_start(radio_config);
+                            if(ts_retrieve_current_message(urlbuf) == 0) web_radio_start(radio_config);
+                            else ESP_LOGE(TAG, "failed to retrieve message.");
                         }
                         break;
                         //Play/Pause*
@@ -232,7 +238,7 @@ void web_radio_gpio_handler_task(void *pvParams)
                         //Next
                         ESP_LOGI(TAG, "\nNEXT\n");
                         if(radio_config == NULL){
-                            start_web_radio(Default);//Default message i.e:-"No messages" (or the previous message etc)
+                            start_web_radio();//Default message i.e:-"No messages" (or the previous message etc)
                         }
                         else{
                             //Stop what it is playing
@@ -241,9 +247,10 @@ void web_radio_gpio_handler_task(void *pvParams)
                             }
                             //Stop what it is playing*
                             //Get Next message and change radio config url
-                            //TODO
+                            ts_next_message();
+                            if(ts_retrieve_current_message(urlbuf) == 0) web_radio_start(radio_config);
+                            else ESP_LOGE(TAG, "failed to retrieve message.");
                             //Get Next message and change radio config url*
-                            web_radio_start(radio_config);
                         }
                         break;
                         //Next*
@@ -251,7 +258,7 @@ void web_radio_gpio_handler_task(void *pvParams)
                         //Back
                         ESP_LOGI(TAG, "\nBACK\n");
                         if(radio_config == NULL){
-                            start_web_radio(Default);//Default message i.e:-"No messages" (or the previous message etc)
+                            start_web_radio();//Default message i.e:-"No messages" (or the previous message etc)
                         }
                         else{
                             //Stop what it is playing
@@ -260,9 +267,10 @@ void web_radio_gpio_handler_task(void *pvParams)
                             }
                             //Stop what it is playing*
                             //Get Previous message and change radio config url
-                            //TODO
+                            ts_prev_message();
+                            if(ts_retrieve_current_message(urlbuf) == 0) web_radio_start(radio_config);
+                            else ESP_LOGE(TAG, "failed to retrieve message.");
                             //Get Previous message and change radio config url*
-                            web_radio_start(radio_config);
                         }
                         break;
                         //Back*
@@ -278,5 +286,5 @@ void web_radio_gpio_handler_task(void *pvParams)
 }
 
 void web_radio_start_touch(){
-    controls_init(web_radio_gpio_handler_task, 2048, NULL);//moved here to activate before audio
+    controls_init(web_radio_gpio_handler_task, 8192, NULL);//moved here to activate before audio
 }

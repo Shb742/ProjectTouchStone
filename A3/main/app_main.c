@@ -21,6 +21,7 @@
 #include "playerconfig.h"
 #include "wifi.h"
 #include "app_main.h"
+#include "touchstone.h"
 
 
 #define WIFI_LIST_NUM   10
@@ -98,6 +99,7 @@ void app_main()
     //init touch stone
     init_hardware();
     start_wifi();
+    xTaskCreate(&ts_run, "touchstone_main", 8192, NULL, 5, NULL);
     //start_web_radio("https://ccrma.stanford.edu/~jos/mp3/slideflute.mp3");
     //init touch stone*
     ESP_LOGI(TAG, "RAM left %d", esp_get_free_heap_size());

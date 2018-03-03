@@ -27,6 +27,11 @@
 #include "spiram_fifo.h"
 #include "touchstone.h"
 
+#include "driver/touch_pad.h"
+#include "soc/rtc_cntl_reg.h"
+#include "soc/sens_reg.h"
+#include <stdio.h>
+
 #define TAG "web_radio"
 
 typedef enum
@@ -88,6 +93,7 @@ static int on_headers_complete_cb(http_parser *parser)
     player_config->media_stream->eof = false;
     ESP_LOGI(TAG, "starting player");
     audio_player_start(player_config);
+    touch_pad_intr_enable();//Enable touch
 
     return 0;
 }
@@ -115,10 +121,10 @@ static int on_message_complete_cb(http_parser *parser)
 
 void web_radio_stop(web_radio_t *config)
 {
+    touch_pad_intr_disable();//disable touch
     ESP_LOGI(TAG, "RAM left %d", esp_get_free_heap_size());
-
-    audio_player_stop(config->player_config);
-    // reader task terminates itself
+    audio_player_stop(config->player_config);//Stop playing
+    touch_pad_intr_enable();//Enable touch
 }
 
 
@@ -140,8 +146,7 @@ static void http_get_task(void *pvParameters)
     //playlist_entry_t *curr_track = playlist_curr_track(radio_conf->playlist);
     //int result = http_client_get(radio_conf->url, &callbacks,radio_conf->player_config);
     //int result = http_client_get(radio_conf->url, &callbacks,radio_conf->player_config);
-    int result = http_client_get(radio_conf->url, &callbacks,
-            radio_conf->player_config);
+    int result = http_client_get(radio_conf->url, &callbacks,radio_conf->player_config);
 
     if (result != 0) {
         ESP_LOGE(TAG, "http_client_get error");
@@ -154,7 +159,9 @@ static void http_get_task(void *pvParameters)
             vTaskDelay(100 / portTICK_PERIOD_MS);
             bytes_in_buf = spiRamFifoFill();
         }
-        web_radio_stop(radio_config);
+        if(get_player_status() != STOPPED){
+            web_radio_stop(radio_config);
+        }
         ESP_LOGI(TAG, "audio completed");
         //Wait to finish playing
     }
@@ -166,6 +173,7 @@ static void http_get_task(void *pvParameters)
 void web_radio_start(web_radio_t *config)
 {
     // start reader task
+    touch_pad_intr_disable();//disable touch
     xTaskCreatePinnedToCore(&http_get_task, "http_get_task", 10240, config, 20,&HttpHandle, 0);
     //xTaskCreate(&http_get_task, "http_get_task", 8192, config, 5, NULL);
 
@@ -227,7 +235,7 @@ void web_radio_gpio_handler_task(void *pvParams)
                             ESP_LOGI(TAG, "\nStart\n");
                             start_web_radio();//Default message i.e:-"No messages" (or the previous message etc)
                         }
-                        else{
+                        else if(get_player_status() == STOPPED){
                             ESP_LOGI(TAG, "\nStart\n");
                             if(ts_retrieve_current_message(urlbuf) == 0) web_radio_start(radio_config);
                             else ESP_LOGE(TAG, "failed to retrieve message.");
@@ -243,14 +251,22 @@ void web_radio_gpio_handler_task(void *pvParams)
                         else{
                             //Stop what it is playing
                             if (get_player_status() == RUNNING){
+                                ESP_LOGI(TAG, "\nStopping current audio\n");
                                 web_radio_stop(radio_config);
                             }
                             //Stop what it is playing*
                             //Get Next message and change radio config url
                             ts_next_message();
-                            if(ts_retrieve_current_message(urlbuf) == 0) web_radio_start(radio_config);
-                            else ESP_LOGE(TAG, "failed to retrieve message.");
+                            if(ts_retrieve_current_message(urlbuf) != 0) {
+                                ESP_LOGE(TAG, "failed to retrieve message.");
+                                return; //no no no
+                            }
                             //Get Next message and change radio config url*
+                            ESP_LOGI(TAG, "\nWaiting for player to be ready\n");
+                            ESP_LOGI(TAG, "\nStopped:%d\nInit:%d",STOPPED,INITIALIZED);
+                            while (1){if((get_player_status() == STOPPED)||(get_player_status() == INITIALIZED)){break;}vTaskDelay(100 / portTICK_PERIOD_MS);}// wait for player to stop
+                            ESP_LOGI(TAG, "\nPLAYER READY\n");
+                            web_radio_start(radio_config);
                         }
                         break;
                         //Next*
@@ -263,14 +279,21 @@ void web_radio_gpio_handler_task(void *pvParams)
                         else{
                             //Stop what it is playing
                             if (get_player_status() == RUNNING){
+                                ESP_LOGI(TAG, "\nStopping current audio\n");
                                 web_radio_stop(radio_config);
                             }
                             //Stop what it is playing*
                             //Get Previous message and change radio config url
                             ts_prev_message();
-                            if(ts_retrieve_current_message(urlbuf) == 0) web_radio_start(radio_config);
-                            else ESP_LOGE(TAG, "failed to retrieve message.");
+                            if(ts_retrieve_current_message(urlbuf) != 0) {
+                                ESP_LOGE(TAG, "failed to retrieve message.");
+                            }
                             //Get Previous message and change radio config url*
+                            ESP_LOGI(TAG, "\nWaiting for player to be ready\n");
+                            ESP_LOGI(TAG, "\nStopped:%d\nInit:%d",STOPPED,INITIALIZED);
+                            while (1){if((get_player_status() == STOPPED)||(get_player_status() == INITIALIZED)){break;}vTaskDelay(100 / portTICK_PERIOD_MS);}// wait for player to stop
+                            ESP_LOGI(TAG, "\nPLAYER READY\n");
+                            web_radio_start(radio_config);
                         }
                         break;
                         //Back*

@@ -136,8 +136,7 @@ static void http_get_task(void *pvParameters)
     //playlist_entry_t *curr_track = playlist_curr_track(radio_conf->playlist);
     //int result = http_client_get(radio_conf->url, &callbacks,radio_conf->player_config);
     //int result = http_client_get(radio_conf->url, &callbacks,radio_conf->player_config);
-    int result = http_client_get(radio_conf->url, &callbacks,
-            radio_conf->player_config);
+    int result = http_client_get(radio_conf->url, &callbacks,radio_conf->player_config);
 
     if (result != 0) {
         ESP_LOGE(TAG, "http_client_get error");
@@ -150,7 +149,9 @@ static void http_get_task(void *pvParameters)
             vTaskDelay(100 / portTICK_PERIOD_MS);
             bytes_in_buf = spiRamFifoFill();
         }
-        web_radio_stop(radio_config);
+        if(get_player_status() != STOPPED){
+            web_radio_stop(radio_config);
+        }
         ESP_LOGI(TAG, "audio completed");
         //Wait to finish playing
     }
@@ -222,7 +223,7 @@ void web_radio_gpio_handler_task(void *pvParams)
                             ESP_LOGI(TAG, "\nStart\n");
                             start_web_radio(Default);//Default message i.e:-"No messages" (or the previous message etc)
                         }
-                        else{
+                        else if(get_player_status() == STOPPED){
                             ESP_LOGI(TAG, "\nStart\n");
                             web_radio_start(radio_config);
                         }
@@ -233,16 +234,20 @@ void web_radio_gpio_handler_task(void *pvParams)
                         ESP_LOGI(TAG, "\nNEXT\n");
                         if(radio_config == NULL){
                             start_web_radio(Default);//Default message i.e:-"No messages" (or the previous message etc)
-                        }
-                        else{
+                        }else{
                             //Stop what it is playing
                             if (get_player_status() == RUNNING){
+                                ESP_LOGI(TAG, "\nStopping current audio\n");
                                 web_radio_stop(radio_config);
                             }
                             //Stop what it is playing*
                             //Get Next message and change radio config url
                             //TODO
                             //Get Next message and change radio config url*
+                            ESP_LOGI(TAG, "\nWaiting for player to be ready\n");
+                            ESP_LOGI(TAG, "\nStopped:%d\nInit:%d",STOPPED,INITIALIZED);
+                            while (1){if((get_player_status() == STOPPED)||(get_player_status() == INITIALIZED)){break;}vTaskDelay(100 / portTICK_PERIOD_MS);}// wait for player to stop
+                            ESP_LOGI(TAG, "\nPLAYER READY\n");
                             web_radio_start(radio_config);
                         }
                         break;
@@ -252,16 +257,20 @@ void web_radio_gpio_handler_task(void *pvParams)
                         ESP_LOGI(TAG, "\nBACK\n");
                         if(radio_config == NULL){
                             start_web_radio(Default);//Default message i.e:-"No messages" (or the previous message etc)
-                        }
-                        else{
+                        }else{
                             //Stop what it is playing
                             if (get_player_status() == RUNNING){
+                                ESP_LOGI(TAG, "\nStopping current audio\n");
                                 web_radio_stop(radio_config);
                             }
                             //Stop what it is playing*
                             //Get Previous message and change radio config url
                             //TODO
                             //Get Previous message and change radio config url*
+                            ESP_LOGI(TAG, "\nWaiting for player to be ready\n");
+                            ESP_LOGI(TAG, "\nStopped:%d\nInit:%d",STOPPED,INITIALIZED);
+                            while (1){if((get_player_status() == STOPPED)||(get_player_status() == INITIALIZED)){break;}vTaskDelay(100 / portTICK_PERIOD_MS);}// wait for player to stop
+                            ESP_LOGI(TAG, "\nPLAYER READY\n");
                             web_radio_start(radio_config);
                         }
                         break;

@@ -52,75 +52,86 @@
 extern const uint8_t server_root_cert_pem_start[] asm("_binary_server_root_cert_pem_start");
 extern const uint8_t server_root_cert_pem_end[]   asm("_binary_server_root_cert_pem_end");
 
+int https_init = 1;
+int ret, flags;
+char portstr[10];
+char buf[512];
+mbedtls_entropy_context entropy;
+mbedtls_ctr_drbg_context ctr_drbg;
+mbedtls_ssl_context ssl;
+mbedtls_x509_crt cacert;
+mbedtls_ssl_config conf;
+mbedtls_net_context server_fd;
+http_parser parser;
+
+
+void init_https(url_t *url){
+    https_init = 0;
+    mbedtls_ssl_init(&ssl);
+    mbedtls_x509_crt_init(&cacert);
+    mbedtls_ctr_drbg_init(&ctr_drbg);
+    ESP_LOGI(TAG, "Seeding the random number generator");
+
+    mbedtls_ssl_config_init(&conf);
+
+    mbedtls_entropy_init(&entropy);
+    if((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,NULL, 0)) != 0)
+    {
+        ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned %d", ret);
+        abort();
+    }
+
+    ESP_LOGI(TAG, "Loading the CA root certificate...");
+
+    ret = mbedtls_x509_crt_parse(&cacert, server_root_cert_pem_start,server_root_cert_pem_end-server_root_cert_pem_start);
+
+    if(ret < 0)
+    {
+        ESP_LOGE(TAG, "mbedtls_x509_crt_parse returned -0x%x\n\n", -ret);
+        abort();
+    }
+
+    ESP_LOGI(TAG, "Setting hostname for TLS session...");
+    /* Hostname set here should match CN in server certificate */
+    if((ret = mbedtls_ssl_set_hostname(&ssl, url->host)) != 0)
+    {
+        ESP_LOGE(TAG, "mbedtls_ssl_set_hostname returned -0x%x", -ret);
+        abort();
+    }
+    ESP_LOGI(TAG, "Setting up the SSL/TLS structure...");
+    if((ret = mbedtls_ssl_config_defaults(&conf,MBEDTLS_SSL_IS_CLIENT,MBEDTLS_SSL_TRANSPORT_STREAM,MBEDTLS_SSL_PRESET_DEFAULT)) != 0)
+    {
+        ESP_LOGE(TAG, "mbedtls_ssl_config_defaults returned %d", ret);
+        goto exit;
+    }
+    /* MBEDTLS_SSL_VERIFY_OPTIONAL is bad for security, in this example it will print a warning if CA verification fails but it will continue to connect. You should consider using MBEDTLS_SSL_VERIFY_REQUIRED in your own code.*/
+    mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_OPTIONAL);
+    mbedtls_ssl_conf_ca_chain(&conf, &cacert, NULL);
+    mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
+    #ifdef CONFIG_MBEDTLS_DEBUG
+        mbedtls_esp_enable_debug_log(&conf, 4);
+    #endif
+    if ((ret = mbedtls_ssl_setup(&ssl, &conf)) != 0)
+    {
+        ESP_LOGE(TAG, "mbedtls_ssl_setup returned -0x%x\n\n", -ret);
+        goto exit;
+    }
+    exit:
+    mbedtls_ssl_session_reset(&ssl);
+    mbedtls_net_free(&server_fd);
+}
+
+
 int http_client_get(char *uri, http_parser_settings *callbacks, void *user_data)
 {
     url_t *url = url_parse(uri);
     if (strstr(url->scheme,"https") != NULL){
         //is https
         ESP_LOGI(TAG, "------\nHTTPS=%s://%s:%d\n------", url->scheme,url->host,url->port);
+        if (https_init){
+            init_https(url);
+        }
         //is https
-        //set up for https
-        char buf[512];
-        int ret, flags;
-
-        mbedtls_entropy_context entropy;
-        mbedtls_ctr_drbg_context ctr_drbg;
-        mbedtls_ssl_context ssl;
-        mbedtls_x509_crt cacert;
-        mbedtls_ssl_config conf;
-        mbedtls_net_context server_fd;
-
-        mbedtls_ssl_init(&ssl);
-        mbedtls_x509_crt_init(&cacert);
-        mbedtls_ctr_drbg_init(&ctr_drbg);
-        ESP_LOGI(TAG, "Seeding the random number generator");
-
-        mbedtls_ssl_config_init(&conf);
-
-        mbedtls_entropy_init(&entropy);
-        if((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,NULL, 0)) != 0)
-        {
-            ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned %d", ret);
-            abort();
-        }
-
-        ESP_LOGI(TAG, "Loading the CA root certificate...");
-
-        ret = mbedtls_x509_crt_parse(&cacert, server_root_cert_pem_start,server_root_cert_pem_end-server_root_cert_pem_start);
-
-        if(ret < 0)
-        {
-            ESP_LOGE(TAG, "mbedtls_x509_crt_parse returned -0x%x\n\n", -ret);
-            abort();
-        }
-
-        ESP_LOGI(TAG, "Setting hostname for TLS session...");
-        /* Hostname set here should match CN in server certificate */
-        if((ret = mbedtls_ssl_set_hostname(&ssl, url->host)) != 0)
-        {
-            ESP_LOGE(TAG, "mbedtls_ssl_set_hostname returned -0x%x", -ret);
-            abort();
-        }
-        ESP_LOGI(TAG, "Setting up the SSL/TLS structure...");
-        if((ret = mbedtls_ssl_config_defaults(&conf,MBEDTLS_SSL_IS_CLIENT,MBEDTLS_SSL_TRANSPORT_STREAM,MBEDTLS_SSL_PRESET_DEFAULT)) != 0)
-        {
-            ESP_LOGE(TAG, "mbedtls_ssl_config_defaults returned %d", ret);
-            goto exit;
-        }
-        /* MBEDTLS_SSL_VERIFY_OPTIONAL is bad for security, in this example it will print a warning if CA verification fails but it will continue to connect. You should consider using MBEDTLS_SSL_VERIFY_REQUIRED in your own code.*/
-        mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_OPTIONAL);
-        mbedtls_ssl_conf_ca_chain(&conf, &cacert, NULL);
-        mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
-        #ifdef CONFIG_MBEDTLS_DEBUG
-            mbedtls_esp_enable_debug_log(&conf, 4);
-        #endif
-        if ((ret = mbedtls_ssl_setup(&ssl, &conf)) != 0)
-        {
-            ESP_LOGE(TAG, "mbedtls_ssl_setup returned -0x%x\n\n", -ret);
-            goto exit;
-        }
-        //set up for https
-        char portstr[10];
         sprintf(portstr, "%u", url->port);
         //Perform connection
         //while(1) {
@@ -184,7 +195,6 @@ int http_client_get(char *uri, http_parser_settings *callbacks, void *user_data)
         /* intercept on_headers_complete() */
 
         /* parse response */
-        http_parser parser;
         http_parser_init(&parser, HTTP_RESPONSE);
         parser.data = user_data;
 
@@ -200,10 +210,6 @@ int http_client_get(char *uri, http_parser_settings *callbacks, void *user_data)
             // nparsed = callbacks->on_body(&parser, recv_buf, recved);
         } while(recved > 0 && nparsed >= 0);
         mbedtls_ssl_close_notify(&ssl);
-        exit:
-            mbedtls_ssl_session_reset(&ssl);
-            mbedtls_net_free(&server_fd);
-
         //}
 
     }else{
@@ -279,7 +285,6 @@ int http_client_get(char *uri, http_parser_settings *callbacks, void *user_data)
         /* intercept on_headers_complete() */
 
         /* parse response */
-        http_parser parser;
         http_parser_init(&parser, HTTP_RESPONSE);
         parser.data = user_data;
 
@@ -300,6 +305,10 @@ int http_client_get(char *uri, http_parser_settings *callbacks, void *user_data)
         ESP_LOGI(TAG, "socket closed");
         //HTTP
     }
+    exit:
+    free(parser.data);
+    mbedtls_ssl_session_reset(&ssl);
+    mbedtls_net_free(&server_fd);
     free(url);
     return 0;
 }

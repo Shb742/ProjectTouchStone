@@ -248,7 +248,7 @@ void web_radio_gpio_handler_task(void *pvParams)
                             //Stop http
                             if( HttpHandle != NULL )
                              {
-                                 vTaskDelete( HttpHandle );
+                                 //vTaskDelete( HttpHandle );
                                  ESP_LOGI(TAG,"Deleted HTTP");
                              }
                              //Stop http*

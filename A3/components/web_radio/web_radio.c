@@ -287,6 +287,7 @@ void web_radio_gpio_handler_task(void *pvParams)
                             ts_prev_message();
                             if(ts_retrieve_current_message(urlbuf) != 0) {
                                 ESP_LOGE(TAG, "failed to retrieve message.");
+                                return;
                             }
                             //Get Previous message and change radio config url*
                             ESP_LOGI(TAG, "\nWaiting for player to be ready\n");

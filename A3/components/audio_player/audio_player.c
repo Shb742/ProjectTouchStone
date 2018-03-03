@@ -148,6 +148,7 @@ void audio_player_stop(player_t *player)
         renderer_stop();
         player_instance->command = CMD_STOP;
         //Clean buffer
+        vTaskDelay(100 / portTICK_PERIOD_MS);//Wait for a bunch of stuff to stop accessing the buffer
         char tmp[1];
         while (spiRamFifoFill() > 0){
             spiRamFifoRead(tmp,1);

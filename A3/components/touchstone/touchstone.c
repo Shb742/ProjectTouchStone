@@ -125,7 +125,7 @@ void ts_heartbeat(){
                     msg->next = head;
                     msg->prev = NULL;
                     head->prev = msg;
-                    head = msg;
+                    if(head != NULL) head = msg;
                     ESP_LOGI(TAG, ">> %s", cJSON_GetObjectItemCaseSensitive(entry, "hash") -> valuestring);
                     strcpy(msg->key, cJSON_GetObjectItemCaseSensitive(entry, "hash") -> valuestring);
                 }
@@ -156,7 +156,7 @@ void ts_poll(){
             bzero(msg, sizeof(ts_m_node));
             msg->next = head;
             msg->prev = NULL;
-            head->prev = msg;
+            if(head != NULL) head->prev = msg;
             head = msg;
             ESP_LOGI(TAG, ">> %s", cJSON_GetObjectItemCaseSensitive(entry, "hash") -> valuestring);
             strcpy(msg->key, cJSON_GetObjectItemCaseSensitive(entry, "hash") -> valuestring);
@@ -198,6 +198,7 @@ void ts_provision(){
 }
 
 cJSON* make_request(char *endpoint) {
+    touch_pad_intr_disable();
     char uri[100];
     sprintf(uri, REQUEST_URI, TS_HOST, TS_PORT, endpoint);
     
@@ -205,6 +206,7 @@ cJSON* make_request(char *endpoint) {
     parser_settings.on_body = ts_on_body;
     parser_settings.on_headers_complete = ts_on_headers_complete;
     int res = http_client_get(uri, &parser_settings, NULL);
+    touch_pad_intr_enable();
     if(res == 0) return cJSON_Parse(jbuf);
     else return NULL;
 }

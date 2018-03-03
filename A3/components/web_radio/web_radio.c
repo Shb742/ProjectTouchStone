@@ -256,7 +256,7 @@ void web_radio_gpio_handler_task(void *pvParams)
                             }
                             //Stop what it is playing*
                             //Get Next message and change radio config url
-                            ts_next_message();
+                            ESP_LOGI(TAG, "next_message returned %d", ts_next_message());
                             if(ts_retrieve_current_message(urlbuf) != 0) {
                                 ESP_LOGE(TAG, "failed to retrieve message.");
                                 return; //no no no
@@ -284,7 +284,7 @@ void web_radio_gpio_handler_task(void *pvParams)
                             }
                             //Stop what it is playing*
                             //Get Previous message and change radio config url
-                            ts_prev_message();
+                            ESP_LOGI(TAG, "prev_message returned %d", ts_prev_message());
                             if(ts_retrieve_current_message(urlbuf) != 0) {
                                 ESP_LOGE(TAG, "failed to retrieve message.");
                                 return;

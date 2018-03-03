@@ -124,6 +124,7 @@ void ts_heartbeat(){
                     bzero(msg, sizeof(ts_m_node));
                     msg->next = head;
                     msg->prev = NULL;
+                    head->prev = msg;
                     head = msg;
                     ESP_LOGI(TAG, ">> %s", cJSON_GetObjectItemCaseSensitive(entry, "hash") -> valuestring);
                     strcpy(msg->key, cJSON_GetObjectItemCaseSensitive(entry, "hash") -> valuestring);
@@ -155,6 +156,7 @@ void ts_poll(){
             bzero(msg, sizeof(ts_m_node));
             msg->next = head;
             msg->prev = NULL;
+            head->prev = msg;
             head = msg;
             ESP_LOGI(TAG, ">> %s", cJSON_GetObjectItemCaseSensitive(entry, "hash") -> valuestring);
             strcpy(msg->key, cJSON_GetObjectItemCaseSensitive(entry, "hash") -> valuestring);

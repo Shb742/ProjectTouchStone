@@ -4,7 +4,6 @@
  *  Created on: 13.03.2017
  *      Author: michaelboeckling
  */
-//Modified by Shoaib Omar.
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>

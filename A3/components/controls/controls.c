@@ -4,7 +4,6 @@
  *  Created on: 13.04.2017
  *      Author: michaelboeckling
  */
-//Modified by Shoaib Omar.
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"

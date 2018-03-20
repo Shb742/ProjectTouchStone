@@ -14,6 +14,9 @@
 #include "http.h"
 #include "cJSON.h"
 
+//LED
+#include "driver/ledc.h"
+
 #include "touchstone.h"
 
 #define TAG "TOUCHSTONE"
@@ -108,6 +111,55 @@ void ts_toggle_heartbeat_allowed(int state) {
 }
 
 int ts_heartbeat_running() {return ts_hb_running;}
+int led_state = 0;
+
+void ts_led_handler(void* pvParameters) {
+    uint32_t max_duty = (1 << LEDC_TIMER_10_BIT) - 1,
+            current_duty = 0;
+
+    while(1) {
+        while(!led_state) vTaskDelay(100 / portTICK_PERIOD_MS);
+        while(led_state) {
+            while(current_duty < max_duty) {
+                ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, current_duty);
+                ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0);
+                current_duty++;
+                vTaskDelay(5/portTICK_PERIOD_MS);
+            }
+            while(current_duty > 0) {
+                ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, current_duty);
+                ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0);
+                current_duty--;
+                vTaskDelay(5/portTICK_PERIOD_MS);
+            }
+        }
+    }
+}
+
+void ts_init_led() {
+    ledc_channel_config_t config = {0};
+    config.gpio_num = 21;
+    config.speed_mode = LEDC_HIGH_SPEED_MODE;
+    config.channel = LEDC_CHANNEL_0;
+    config.intr_type = LEDC_INTR_DISABLE;
+    config.timer_sel = LEDC_TIMER_3;
+    config.duty = 0;
+
+    ledc_timer_config_t ti_config = {0};
+    ti_config.speed_mode = LEDC_HIGH_SPEED_MODE;
+    ti_config.duty_resolution = LEDC_TIMER_10_BIT;
+    ti_config.timer_num = LEDC_TIMER_3;
+    ti_config.freq_hz = 500;
+
+    ledc_channel_config(&config);
+    ledc_timer_config(&ti_config);
+
+    xTaskCreate(&ts_led_handler, "LED", 1024, NULL, 0, NULL);
+}
+
+void ts_update_led_state(int led){
+    led_state = led;
+}
 
 void ts_heartbeat(){
     char endpoint[50], id[20];
@@ -133,6 +185,7 @@ void ts_heartbeat(){
                     strcpy(msg->key, cJSON_GetObjectItemCaseSensitive(entry, "hash") -> valuestring);
                 }
                 msg_len += ctr;
+                if(ctr > 0) led_state = 1;
                 ESP_LOGI(TAG, "enumeration complete, added %d messages to store.", ctr);
             }
             cJSON_Delete(obj);
@@ -218,5 +271,6 @@ cJSON* make_request(char *endpoint) {
 void ts_run(){
     if(ts_check_activation() != 0) ts_provision();
     ts_poll();
+    ts_init_led();
     ts_heartbeat();
 }

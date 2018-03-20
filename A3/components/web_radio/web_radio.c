@@ -149,6 +149,7 @@ static void http_get_task(void *pvParameters)
     //int result = http_client_get(radio_conf->url, &callbacks,radio_conf->player_config);
     int result = http_client_get(radio_conf->url, &callbacks,radio_conf->player_config);
 
+    ts_toggle_heartbeat_allowed(1);
     if (result != 0) {
         ESP_LOGE(TAG, "http_client_get error");
     } else {
@@ -167,7 +168,6 @@ static void http_get_task(void *pvParameters)
         //Wait to finish playing
     }
     // ESP_LOGI(TAG, "http_client_get stack: %d\n", uxTaskGetStackHighWaterMark(NULL));
-    ts_toggle_heartbeat_allowed(1);
     vTaskDelete(NULL);
 }
 
@@ -235,6 +235,7 @@ void web_radio_gpio_handler_task(void *pvParams)
                         }else if(radio_config == NULL){
                             ESP_LOGI(TAG, "\nStart\n");
                             start_web_radio();//Default message i.e:-"No messages" (or the previous message etc)
+                            ts_update_led_state(0);
                         }
                         else if(get_player_status() == STOPPED){
                             ESP_LOGI(TAG, "\nStart\n");

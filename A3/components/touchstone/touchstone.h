@@ -8,3 +8,4 @@ int ts_retrieve_current_message(char* uri);
 int ts_next_message();
 int ts_prev_message();
 void ts_reset_position();
+void ts_update_led_state(int led);

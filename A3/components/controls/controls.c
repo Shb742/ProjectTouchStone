@@ -1,10 +1,4 @@
-/*
- * controls.c
- *
- *  Created on: 13.04.2017
- *      Author: michaelboeckling
- */
-//Modified by Shoaib Omar.
+//Author: Shoaib Omar (almost completely rewritten)
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"

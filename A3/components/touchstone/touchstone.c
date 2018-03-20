@@ -1,3 +1,4 @@
+//Author : Shan Sam Gao
 //OS
 #include <string.h>
 #include <stdlib.h>

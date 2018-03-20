@@ -4,7 +4,7 @@
  *  Created on: 13.03.2017
  *      Author: michaelboeckling
  */
-//Modified by Shoaib Omar.
+//Heavily modified - (by Shoaib & Shan)
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>

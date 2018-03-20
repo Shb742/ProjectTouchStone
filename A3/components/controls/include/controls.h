@@ -1,10 +1,4 @@
-/*
- * controls.h
- *
- *  Created on: 13.04.2017
- *      Author: michaelboeckling
- */
-
+//Author: Shoaib Omar (almost completely rewritten)
 #ifndef _CONTROLS_H_
 #define _CONTROLS_H_
 

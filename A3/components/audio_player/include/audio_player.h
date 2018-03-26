@@ -4,7 +4,7 @@
  *  Created on: 12.03.2017
  *      Author: michaelboeckling
  */
-
+//Modified by Shoaib Omar
 #ifndef INCLUDE_AUDIO_PLAYER_H_
 #define INCLUDE_AUDIO_PLAYER_H_
 
@@ -48,6 +48,6 @@ void audio_player_init(player_t *player);
 void audio_player_start(player_t *player);
 void audio_player_stop(player_t *player);
 void audio_player_destroy();
-
+void reset_player_status();
 
 #endif /* INCLUDE_AUDIO_PLAYER_H_ */

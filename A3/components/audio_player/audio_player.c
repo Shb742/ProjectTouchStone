@@ -163,3 +163,7 @@ component_status_t get_player_status()
     return player_status;
 }
 
+void reset_player_status(){
+    player_status = INITIALIZED;//hack to make http get work 
+}
+

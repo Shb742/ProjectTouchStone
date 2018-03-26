@@ -200,6 +200,7 @@ int http_client_get(char *uri, http_parser_settings *callbacks, void *user_data)
         parser.data = user_data;
 
         esp_err_t nparsed = 0;
+        reset_player_status();//hack to make it work
         do {
             bzero(recv_buf, sizeof(recv_buf));
             recved = mbedtls_ssl_read(&ssl, (unsigned char *)recv_buf, sizeof(recv_buf)-1);

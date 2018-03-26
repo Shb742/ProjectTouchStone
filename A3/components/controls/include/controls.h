@@ -11,6 +11,6 @@ typedef struct {
 
 void controls_init(TaskFunction_t gpio_handler_task, const uint16_t usStackDepth, void *user_data);
 void controls_destroy();
-void CheckTouch();
+//void CheckTouch();
 
 #endif

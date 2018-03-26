@@ -26,17 +26,17 @@ static bool s_pad_pressed[TOUCH_PAD_MAX];
 static uint32_t s_pad_init_val[TOUCH_PAD_MAX];
 static const char* TAG = "Touch pad";
 
-void CheckTouch(){
+/*void CheckTouch(){
     return ;
     //touch_pad_intr_enable();
-    for (int i = 0; i < TOUCH_PAD_MAX; i++) {
+    for (int i = 4; i < 7; i++) {
         if (s_pad_pressed[i] == true) {
             ESP_LOGI(TAG, "T%d pressed!", i);
             // Clear information on pad activation
             s_pad_pressed[i] = false;
         }
     }
-}
+}*/
 
 static void tp_set_thresholds(void)
 {
@@ -44,7 +44,7 @@ static void tp_set_thresholds(void)
     //delay some time in order to make the filter work and get a initial value
     vTaskDelay(500/portTICK_PERIOD_MS);
 
-    for (int i = 0; i<TOUCH_PAD_MAX; i++) {
+    for (int i = 4; i < 7; i++) {
         //read filtered value
         touch_pad_read_filtered(i, &touch_value);
         s_pad_init_val[i] = touch_value;
@@ -87,7 +87,7 @@ static void tp_rtc_intr(void * arg)
  */
 static void tp_touch_pad_init()
 {
-    for (int i = 0;i< TOUCH_PAD_MAX;i++) {
+    for (int i = 4; i < 7; i++) {
         //init RTC IO and mode for touch pad.
         touch_pad_config(i, 50);
     }

@@ -49,7 +49,7 @@ TaskHandle_t HttpHandle = NULL;
 
 static int on_header_field_cb(http_parser *parser, const char *at, size_t length)
 {
-    CheckTouch();
+    //CheckTouch();
     // convert to lower case
     unsigned char *c = (unsigned char *) at;
     for (; *c; ++c)
@@ -65,7 +65,7 @@ static int on_header_field_cb(http_parser *parser, const char *at, size_t length
 
 static int on_header_value_cb(http_parser *parser, const char *at, size_t length)
 {
-    CheckTouch();
+    //CheckTouch();
     //ESP_LOGI(TAG, "Got header: %s", at);
     if (curr_header_field == HDR_CONTENT_TYPE) {
         //ESP_LOGI(TAG, "content-type: %s", at);
@@ -100,7 +100,7 @@ static int on_headers_complete_cb(http_parser *parser)
 
 static int on_body_cb(http_parser* parser, const char *at, size_t length)
 {
-    CheckTouch();
+    //CheckTouch();
     //printf("%.*s", length, at);
     //if (get_player_status() == RUNNING){
     //ESP_LOGI(TAG, "Playing");
@@ -111,7 +111,7 @@ static int on_body_cb(http_parser* parser, const char *at, size_t length)
 
 static int on_message_complete_cb(http_parser *parser)
 {
-    CheckTouch();
+    //CheckTouch();
     player_t *player_config = parser->data;
     player_config->media_stream->eof = true;
 
@@ -132,7 +132,7 @@ static void http_get_task(void *pvParameters)
 {
     //disable heartbeats on touchstone library
     ts_toggle_heartbeat_allowed(0);
-    while(ts_heartbeat_running()) vTaskDelay(100/portTICK_PERIOD_MS);
+    //while(ts_heartbeat_running()) vTaskDelay(100/portTICK_PERIOD_MS);
     web_radio_t *radio_conf = pvParameters;
 
     /* configure callbacks */
@@ -222,89 +222,91 @@ void web_radio_gpio_handler_task(void *pvParams)
     bool *s_pad_pressed = pvParams;
     touch_pad_intr_enable();
     while (1) {
-        for (int i = 0; i < TOUCH_PAD_MAX; i++) {
-            if (s_pad_pressed[i] == true) {
-                ESP_LOGI(TAG, "T%d pressed!", i);
-                //Check which button
-                switch(i) {
-                    case 5:
-                        //Play/Pause
-                        if (get_player_status() == RUNNING){
-                            ESP_LOGI(TAG, "\nStop\n");
-                            web_radio_stop(radio_config);
-                        }else if(radio_config == NULL){
-                            ESP_LOGI(TAG, "\nStart\n");
-                            start_web_radio();//Default message i.e:-"No messages" (or the previous message etc)
-                            ts_update_led_state(0);
-                        }
-                        else if(get_player_status() == STOPPED){
-                            ESP_LOGI(TAG, "\nStart\n");
-                            if(ts_retrieve_current_message(urlbuf) == 0) web_radio_start(radio_config);
-                            else ESP_LOGE(TAG, "failed to retrieve message.");
-                        }
-                        break;
-                        //Play/Pause*
-                    case 6:
-                        //Next
-                        ESP_LOGI(TAG, "\nNEXT\n");
-                        if(radio_config == NULL){
-                            start_web_radio();//Default message i.e:-"No messages" (or the previous message etc)
-                        }
-                        else{
-                            //Stop what it is playing
+        if (ts_heartbeat_running() == 0){
+            for (int i = 4; i < 7; i++) {
+                if (s_pad_pressed[i] == true) {
+                    ESP_LOGI(TAG, "T%d pressed!", i);
+                    //Check which button
+                    switch(i) {
+                        case 5:
+                            //Play/Pause
                             if (get_player_status() == RUNNING){
-                                ESP_LOGI(TAG, "\nStopping current audio\n");
+                                ESP_LOGI(TAG, "\nStop\n");
                                 web_radio_stop(radio_config);
+                            }else if(radio_config == NULL){
+                                ESP_LOGI(TAG, "\nStart\n");
+                                start_web_radio();//Default message i.e:-"No messages" (or the previous message etc)
+                                ts_update_led_state(0);
                             }
-                            //Stop what it is playing*
-                            //Get Next message and change radio config url
-                            ESP_LOGI(TAG, "next_message returned %d", ts_next_message());
-                            if(ts_retrieve_current_message(urlbuf) != 0) {
-                                ESP_LOGE(TAG, "failed to retrieve message.");
-                                break; //no no no
+                            else if(get_player_status() == STOPPED){
+                                ESP_LOGI(TAG, "\nStart\n");
+                                if(ts_retrieve_current_message(urlbuf) == 0) web_radio_start(radio_config);
+                                else ESP_LOGE(TAG, "failed to retrieve message.");
                             }
-                            //Get Next message and change radio config url*
-                            ESP_LOGI(TAG, "\nWaiting for player to be ready\n");
-                            ESP_LOGI(TAG, "\nStopped:%d\nInit:%d",STOPPED,INITIALIZED);
-                            while (1){if((get_player_status() == STOPPED)||(get_player_status() == INITIALIZED)){break;}vTaskDelay(100 / portTICK_PERIOD_MS);}// wait for player to stop
-                            ESP_LOGI(TAG, "\nPLAYER READY\n");
-                            web_radio_start(radio_config);
-                        }
-                        break;
-                        //Next*
-                    case 4:
-                        //Back
-                        ESP_LOGI(TAG, "\nBACK\n");
-                        if(radio_config == NULL){
-                            start_web_radio();//Default message i.e:-"No messages" (or the previous message etc)
-                        }
-                        else{
-                            //Stop what it is playing
-                            if (get_player_status() == RUNNING){
-                                ESP_LOGI(TAG, "\nStopping current audio\n");
-                                web_radio_stop(radio_config);
+                            break;
+                            //Play/Pause*
+                        case 6:
+                            //Next
+                            ESP_LOGI(TAG, "\nNEXT\n");
+                            if(radio_config == NULL){
+                                start_web_radio();//Default message i.e:-"No messages" (or the previous message etc)
                             }
-                            //Stop what it is playing*
-                            //Get Previous message and change radio config url
-                            ESP_LOGI(TAG, "prev_message returned %d", ts_prev_message());
-                            if(ts_retrieve_current_message(urlbuf) != 0) {
-                                ESP_LOGE(TAG, "failed to retrieve message.");
-                                break;
+                            else{
+                                //Stop what it is playing
+                                if (get_player_status() == RUNNING){
+                                    ESP_LOGI(TAG, "\nStopping current audio\n");
+                                    web_radio_stop(radio_config);
+                                }
+                                //Stop what it is playing*
+                                //Get Next message and change radio config url
+                                ESP_LOGI(TAG, "next_message returned %d", ts_next_message());
+                                if(ts_retrieve_current_message(urlbuf) != 0) {
+                                    ESP_LOGE(TAG, "failed to retrieve message.");
+                                    break; //no no no
+                                }
+                                //Get Next message and change radio config url*
+                                ESP_LOGI(TAG, "\nWaiting for player to be ready\n");
+                                ESP_LOGI(TAG, "\nStopped:%d\nInit:%d",STOPPED,INITIALIZED);
+                                while (1){if((get_player_status() == STOPPED)||(get_player_status() == INITIALIZED)){break;}vTaskDelay(100 / portTICK_PERIOD_MS);}// wait for player to stop
+                                ESP_LOGI(TAG, "\nPLAYER READY\n");
+                                web_radio_start(radio_config);
                             }
-                            //Get Previous message and change radio config url*
-                            ESP_LOGI(TAG, "\nWaiting for player to be ready\n");
-                            ESP_LOGI(TAG, "\nStopped:%d\nInit:%d",STOPPED,INITIALIZED);
-                            while (1){if((get_player_status() == STOPPED)||(get_player_status() == INITIALIZED)){break;}vTaskDelay(100 / portTICK_PERIOD_MS);}// wait for player to stop
-                            ESP_LOGI(TAG, "\nPLAYER READY\n");
-                            web_radio_start(radio_config);
-                        }
-                        break;
-                        //Back*
-                    default:
-                        continue;
+                            break;
+                            //Next*
+                        case 4:
+                            //Back
+                            ESP_LOGI(TAG, "\nBACK\n");
+                            if(radio_config == NULL){
+                                start_web_radio();//Default message i.e:-"No messages" (or the previous message etc)
+                            }
+                            else{
+                                //Stop what it is playing
+                                if (get_player_status() == RUNNING){
+                                    ESP_LOGI(TAG, "\nStopping current audio\n");
+                                    web_radio_stop(radio_config);
+                                }
+                                //Stop what it is playing*
+                                //Get Previous message and change radio config url
+                                ESP_LOGI(TAG, "prev_message returned %d", ts_prev_message());
+                                if(ts_retrieve_current_message(urlbuf) != 0) {
+                                    ESP_LOGE(TAG, "failed to retrieve message.");
+                                    break;
+                                }
+                                //Get Previous message and change radio config url*
+                                ESP_LOGI(TAG, "\nWaiting for player to be ready\n");
+                                ESP_LOGI(TAG, "\nStopped:%d\nInit:%d",STOPPED,INITIALIZED);
+                                while (1){if((get_player_status() == STOPPED)||(get_player_status() == INITIALIZED)){break;}vTaskDelay(100 / portTICK_PERIOD_MS);}// wait for player to stop
+                                ESP_LOGI(TAG, "\nPLAYER READY\n");
+                                web_radio_start(radio_config);
+                            }
+                            break;
+                            //Back*
+                        default:
+                            continue;
+                    }
+                    // Clear information on pad activation
+                    s_pad_pressed[i] = false;
                 }
-                // Clear information on pad activation
-                s_pad_pressed[i] = false;
             }
         }
         vTaskDelay(100 / portTICK_PERIOD_MS);

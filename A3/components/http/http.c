@@ -28,6 +28,7 @@
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/error.h"
 #include "mbedtls/certs.h"
+#include "audio_player.h"//killing the read
 //https*
 
 
@@ -208,7 +209,7 @@ int http_client_get(char *uri, http_parser_settings *callbacks, void *user_data)
 
             // invoke on_body cb directly
             // nparsed = callbacks->on_body(&parser, recv_buf, recved);
-        } while(recved > 0 && nparsed >= 0);
+        } while(recved > 0 && nparsed >= 0 && (get_player_status() != STOPPED));
         mbedtls_ssl_close_notify(&ssl);
         //}
 

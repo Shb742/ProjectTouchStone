@@ -4,3 +4,7 @@ firmware was written primarily by:
 
 1.Shoaib Omar.
 2.Shan Sam Gao.
+
+# Circuit Diagram
+
+![alt text](http://Circuit.png)

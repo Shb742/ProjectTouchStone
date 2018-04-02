@@ -7,4 +7,4 @@ firmware was written primarily by:
 
 # Circuit Diagram
 
-![alt text](http:///A3/Circuit.png)
+![Circuit Diagram](A3/Circuit.png)

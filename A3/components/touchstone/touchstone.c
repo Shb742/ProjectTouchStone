@@ -90,6 +90,7 @@ int ts_retrieve_current_message(char* uri){
 }
 
 int ts_next_message(){
+    if(cur == NULL) return -1;
     if(cur->next == NULL) return -1;
     cur = cur->next;
     msg_offset++;
@@ -97,6 +98,7 @@ int ts_next_message(){
 }
 
 int ts_prev_message(){
+    if(cur == NULL) return -1;
     if(cur->prev == NULL) return -1;
     cur = cur->prev;
     msg_offset--;

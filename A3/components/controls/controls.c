@@ -13,9 +13,10 @@
 #include <stdio.h>
 
 #include "controls.h"
+#include "touchstone.h"
 
 
-//static xQueueHandle gpio_evt_queue = NULL;
+static xQueueHandle gpio_evt_queue = NULL;
 static TaskHandle_t *gpio_task;
 #define ESP_INTR_FLAG_DEFAULT 0
 
@@ -96,7 +97,7 @@ static void tp_touch_pad_init()
 //TOUCH*
 
 /* gpio event handler */
-/*static void IRAM_ATTR gpio_isr_handler(void* arg)
+static void IRAM_ATTR gpio_isr_handler(void* arg)
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     uint32_t gpio_num = (uint32_t) arg;
@@ -106,7 +107,21 @@ static void tp_touch_pad_init()
     if(xHigherPriorityTaskWoken) {
         portYIELD_FROM_ISR();
     }
-}*/
+}
+
+static void send_help_task(void *pvParams) {
+    gpio_handler_param_t *params = pvParams;
+    //web_radio_t *config = params->user_data;
+    xQueueHandle gpio_evt_queue = params->gpio_evt_queue;
+
+    uint32_t io_num;
+    for (;;) {
+        if (xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
+	    xTaskCreate(&ts_set_pairable, "setPairableTask", 8192, NULL, 0, NULL);
+	}
+	vTaskDelay(20 / portTICK_PERIOD_MS);
+    }     
+}
 
 
 void controls_init(TaskFunction_t gpio_handler_task, const uint16_t usStackDepth, void *user_data)
@@ -133,7 +148,7 @@ void controls_init(TaskFunction_t gpio_handler_task, const uint16_t usStackDepth
     touch_pad_intr_enable();
     xTaskCreatePinnedToCore(gpio_handler_task, "gpio_handler_task", usStackDepth, s_pad_pressed, 10, gpio_task, 0);
     //xTaskCreatePinnedToCore(&gpio_handler_task, "touch_pad_read_task", usStackDepth, s_pad_activated, 10, NULL,0);//OLD
-    /*gpio_config_t io_conf;
+    gpio_config_t io_conf;
 
     //interrupt of rising edge
     io_conf.intr_type = GPIO_PIN_INTR_POSEDGE;
@@ -154,7 +169,7 @@ void controls_init(TaskFunction_t gpio_handler_task, const uint16_t usStackDepth
     params->user_data = user_data;
 
     //start gpio task
-    xTaskCreatePinnedToCore(gpio_handler_task, "gpio_handler_task", usStackDepth, params, 10, gpio_task, 0);
+    xTaskCreatePinnedToCore(send_help_task, "gpio_handler_task", usStackDepth, params, 10, gpio_task, 0);
 
     //install gpio isr service
     gpio_install_isr_service(ESP_INTR_FLAG_DEFAULT);
@@ -163,7 +178,7 @@ void controls_init(TaskFunction_t gpio_handler_task, const uint16_t usStackDepth
     gpio_isr_handler_remove(GPIO_NUM_0);
 
     //hook isr handler for specific gpio pin
-    gpio_isr_handler_add(GPIO_NUM_0, gpio_isr_handler, (void*) GPIO_NUM_0);*/
+    gpio_isr_handler_add(GPIO_NUM_0, gpio_isr_handler, (void*) GPIO_NUM_0);
 
 }
 

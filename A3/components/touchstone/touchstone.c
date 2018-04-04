@@ -41,7 +41,7 @@ struct ts_m_node {
 
 ts_m_node *head = NULL, *cur = NULL;
 
-//http parser things
+/* http parser */
 static int ts_on_headers_complete(http_parser *parser) {
     bzero(jbuf, sizeof jbuf);
     buf_offset = 0;
@@ -54,6 +54,7 @@ static int ts_on_body(http_parser *parser, const char *at, size_t len) {
     return 0;
 }
 
+/* utilities */
 void get_hardware_id(char *data){
     uint8_t buf[8];
     esp_efuse_mac_get_default(buf);
@@ -70,6 +71,8 @@ int ts_check_error(cJSON *obj) {
     }
 }
 
+
+/* messages */
 int ts_retrieve_current_message(char* uri){
     if(cur == NULL) return -1;
     char endpoint[80], id[20];
@@ -105,6 +108,7 @@ void ts_reset_position(){
     msg_offset = 0;
 }
 
+/* http-related utility */
 int ts_is_hb_allowed = 1;
 
 void ts_toggle_heartbeat_allowed(int state) {
@@ -112,6 +116,8 @@ void ts_toggle_heartbeat_allowed(int state) {
 }
 
 int ts_heartbeat_running() {return ts_hb_running;}
+
+/* led */
 int led_state = 0;
 
 void ts_led_handler(void* pvParameters) {
@@ -125,13 +131,13 @@ void ts_led_handler(void* pvParameters) {
                 ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, current_duty);
                 ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0);
                 current_duty++;
-                vTaskDelay(5/portTICK_PERIOD_MS);
+                vTaskDelay(8/portTICK_PERIOD_MS);
             }
             while(current_duty > 0) {
                 ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, current_duty);
                 ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0);
                 current_duty--;
-                vTaskDelay(5/portTICK_PERIOD_MS);
+                vTaskDelay(8/portTICK_PERIOD_MS);
             }
         }
     }
@@ -139,7 +145,7 @@ void ts_led_handler(void* pvParameters) {
 
 void ts_init_led() {
     ledc_channel_config_t config = {0};
-    config.gpio_num = 21;
+    config.gpio_num = 5;
     config.speed_mode = LEDC_HIGH_SPEED_MODE;
     config.channel = LEDC_CHANNEL_0;
     config.intr_type = LEDC_INTR_DISABLE;
@@ -160,6 +166,21 @@ void ts_init_led() {
 
 void ts_update_led_state(int led){
     led_state = led;
+}
+
+/* sdk features */
+
+void ts_set_pairable(){
+    char endpoint[50], id[20];
+    get_hardware_id(id);
+    sprintf(endpoint, "device/%s/setpair", id);
+    cJSON *obj = make_request(endpoint);
+    if(ts_check_error(obj) == 0) {
+	ESP_LOGI(TAG, "success - device now pairable for 30s");
+    } else {
+	ESP_LOGE(TAG, "failed to update the pairable status");
+    }
+    vTaskDelete(NULL);
 }
 
 void ts_heartbeat(){
@@ -186,7 +207,10 @@ void ts_heartbeat(){
                     strcpy(msg->key, cJSON_GetObjectItemCaseSensitive(entry, "hash") -> valuestring);
                 }
                 msg_len += ctr;
-                if(ctr > 0) led_state = 1;
+                if(ctr > 0) {
+                    led_state = 1;
+                    ts_reset_position();
+                }
                 ESP_LOGI(TAG, "enumeration complete, added %d messages to store.", ctr);
             }
             cJSON_Delete(obj);

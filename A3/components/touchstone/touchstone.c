@@ -280,7 +280,7 @@ void ts_provision(){
 }
 
 cJSON* make_request(char *endpoint) {
-    touch_pad_intr_disable();
+    //touch_pad_intr_disable();
     char uri[100];
     sprintf(uri, REQUEST_URI, TS_HOST, TS_PORT, endpoint);
     
@@ -288,7 +288,7 @@ cJSON* make_request(char *endpoint) {
     parser_settings.on_body = ts_on_body;
     parser_settings.on_headers_complete = ts_on_headers_complete;
     int res = http_client_get(uri, &parser_settings, NULL);
-    touch_pad_intr_enable();
+    //touch_pad_intr_enable();
     if(res == 0) return cJSON_Parse(jbuf);
     else return NULL;
 }

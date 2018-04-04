@@ -238,7 +238,7 @@ void web_radio_gpio_handler_task(void *pvParams)
                                 start_web_radio();//Default message i.e:-"No messages" (or the previous message etc)
                                 ts_update_led_state(0);
                             }
-                            else if(get_player_status() == STOPPED){
+                            else{
                                 ESP_LOGI(TAG, "\nStart\n");
                                 if(ts_retrieve_current_message(urlbuf) == 0) web_radio_start(radio_config);
                                 else ESP_LOGE(TAG, "failed to retrieve message.");

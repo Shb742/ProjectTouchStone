@@ -225,6 +225,8 @@ void web_radio_gpio_handler_task(void *pvParams)
         if (ts_heartbeat_running() == 0){
             for (int i = 4; i < 7; i++) {
                 if (s_pad_pressed[i] == true) {
+                    // Clear information on pad activation
+                    s_pad_pressed[i] = false;
                     ESP_LOGI(TAG, "T%d pressed!", i);
                     //Check which button
                     switch(i) {
@@ -304,8 +306,6 @@ void web_radio_gpio_handler_task(void *pvParams)
                         default:
                             continue;
                     }
-                    // Clear information on pad activation
-                    s_pad_pressed[i] = false;
                 }
             }
         }

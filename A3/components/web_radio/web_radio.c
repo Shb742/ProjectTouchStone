@@ -174,6 +174,7 @@ static void http_get_task(void *pvParameters)
 void web_radio_start(web_radio_t *config)
 {
     // start reader task
+    ts_update_led_state(0);//update Led to say message has been played
     touch_pad_intr_disable();//disable touch
     xTaskCreatePinnedToCore(&http_get_task, "http_get_task", 10240, config, 20,&HttpHandle, 0);
     //xTaskCreate(&http_get_task, "http_get_task", 8192, config, 5, NULL);
@@ -238,12 +239,14 @@ void web_radio_gpio_handler_task(void *pvParams)
                             }else if(radio_config == NULL){
                                 ESP_LOGI(TAG, "\nStart\n");
                                 start_web_radio();//Default message i.e:-"No messages" (or the previous message etc)
-                                ts_update_led_state(0);
                             }
                             else{
                                 ESP_LOGI(TAG, "\nStart\n");
-                                if(ts_retrieve_current_message(urlbuf) == 0) web_radio_start(radio_config);
-                                else ESP_LOGE(TAG, "failed to retrieve message.");
+                                if(ts_retrieve_current_message(urlbuf) == 0){
+                                    web_radio_start(radio_config);
+                                }else{
+                                    ESP_LOGE(TAG, "failed to retrieve message.");
+                                }
                             }
                             break;
                             //Play/Pause*

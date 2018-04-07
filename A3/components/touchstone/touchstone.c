@@ -1,4 +1,4 @@
-//Author : Shan Sam Gao
+//Author : Shan Sam Gao, Shoaib Omar
 //OS
 #include <string.h>
 #include <stdlib.h>
@@ -173,6 +173,11 @@ void ts_update_led_state(int led){
 /* sdk features */
 
 void ts_set_pairable(){
+    while (ts_heartbeat_running() != 0){vTaskDelay(100 / portTICK_PERIOD_MS);}//wait
+    //disable heartbeats
+    ts_toggle_heartbeat_allowed(0);
+    ts_hb_running = 1;// Special heartbeat
+    //disable heartbeats*
     char endpoint[50], id[20];
     get_hardware_id(id);
     sprintf(endpoint, "device/%s/setpair", id);
@@ -182,6 +187,10 @@ void ts_set_pairable(){
     } else {
 	ESP_LOGE(TAG, "failed to update the pairable status");
     }
+    //enable heartbeats
+    ts_hb_running = 0;// Special heartbeat
+    ts_toggle_heartbeat_allowed(1);
+    //enable heartbeats*
     vTaskDelete(NULL);
 }
 
@@ -210,7 +219,7 @@ void ts_heartbeat(){
                 }
                 msg_len += ctr;
                 if(ctr > 0) {
-                    led_state = 1;
+                    led_state = 1;//can use ctr to indicate more than 1 message received in the future
                     ts_reset_position();
                 }
                 ESP_LOGI(TAG, "enumeration complete, added %d messages to store.", ctr);

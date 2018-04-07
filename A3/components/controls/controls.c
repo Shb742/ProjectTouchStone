@@ -124,9 +124,9 @@ static void send_help_task(void *pvParams) {
     uint32_t io_num;
     for (;;) {
         if (xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
-	    xTaskCreate(&ts_set_pairable, "setPairableTask", 8192, NULL, 0, NULL);
-	}
-	vTaskDelay(20 / portTICK_PERIOD_MS);
+	       xTaskCreate(&ts_set_pairable, "setPairableTask", 8192, NULL, 0, NULL);
+	   }
+	   vTaskDelay(20 / portTICK_PERIOD_MS);
     }     
 }
 

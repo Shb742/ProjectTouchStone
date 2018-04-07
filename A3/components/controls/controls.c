@@ -70,9 +70,11 @@ static void tp_rtc_intr(void * arg)
         uint16_t value = 0;
         touch_pad_read_filtered(i, &value);
         if (value < s_pad_init_val[i] * 0.6){
-            if (s_pad_activated[i] == false){
-                s_pad_pressed[i] = true;
+            //Make all other buttons false as we only want to register latest touch
+            for (int j = 4; j < 7; j++) {
+                s_pad_activated[j] = false;
             }
+            //Make all other buttons false as we only want to register latest touch*
             s_pad_activated[i] = true;
         }else{
             s_pad_activated[i] = false;

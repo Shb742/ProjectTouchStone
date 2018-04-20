@@ -8,7 +8,7 @@ firmware was written by:
 1.Shoaib Omar.<br>
 2.Shan Sam Gao.
 
-## How to set wifi password & compile 
+## How to set up & compile 
 
 1. Edit the config file using `make menuconfig` in the Firmware Folder
 

@@ -3,7 +3,7 @@ firmware is based on : - https://github.com/MrBuddyCasino/ESP32_MP3_Decoder && h
 
 firmware was written by:
 
-1.Shoaib Omar.
+1.Shoaib Omar.<br>
 2.Shan Sam Gao.
 
 ## How to set wifi password & compile 

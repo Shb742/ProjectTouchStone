@@ -1,5 +1,7 @@
 # Project TouchStone (firmware)
-firmware is based on : - https://github.com/MrBuddyCasino/ESP32_MP3_Decoder && https://github.com/espressif/ESP8266_MP3_DECODER
+Firmware is based on : - 
+  1. https://github.com/MrBuddyCasino/ESP32_MP3_Decoder
+  2. https://github.com/espressif/ESP8266_MP3_DECODER
 
 firmware was written by:
 

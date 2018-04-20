@@ -125,9 +125,11 @@ void init_https(url_t *url){
 
 int http_client_get(char *uri, http_parser_settings *callbacks, void *user_data)
 {
+    int is_https = 0;
     url_t *url = url_parse(uri);
     if (strstr(url->scheme,"https") != NULL){
         //is https
+        is_https = 1;
         ESP_LOGI(TAG, "------\nHTTPS=%s://%s:%d\n------", url->scheme,url->host,url->port);
         if (https_init){
             init_https(url);
@@ -135,7 +137,6 @@ int http_client_get(char *uri, http_parser_settings *callbacks, void *user_data)
         //is https
         sprintf(portstr, "%u", url->port);
         //Perform connection
-        //while(1) {
         mbedtls_net_init(&server_fd);
         ESP_LOGI(TAG, "Connecting to %s:%s...", url->host,portstr);
         if ((ret = mbedtls_net_connect(&server_fd, url->host,portstr, MBEDTLS_NET_PROTO_TCP)) != 0)
@@ -291,6 +292,7 @@ int http_client_get(char *uri, http_parser_settings *callbacks, void *user_data)
         parser.data = user_data;
 
         esp_err_t nparsed = 0;
+        reset_player_status();//hack to make it work
         do {
             recved = read(sock, recv_buf, sizeof(recv_buf)-1);
 
@@ -299,7 +301,7 @@ int http_client_get(char *uri, http_parser_settings *callbacks, void *user_data)
 
             // invoke on_body cb directly
             // nparsed = callbacks->on_body(&parser, recv_buf, recved);
-        } while(recved > 0 && nparsed >= 0);
+        } while(recved > 0 && nparsed >= 0 && (get_player_status() != STOPPED));
 
 
         ESP_LOGI(TAG, "... done reading from socket. Last read return=%d errno=%d", recved, errno);
@@ -308,8 +310,10 @@ int http_client_get(char *uri, http_parser_settings *callbacks, void *user_data)
         //HTTP
     }
     exit:
-    mbedtls_ssl_session_reset(&ssl);
-    mbedtls_net_free(&server_fd);
+    if (is_https == 1){
+        mbedtls_ssl_session_reset(&ssl);
+        mbedtls_net_free(&server_fd);
+    }
     free(url);
     return 0;
 }

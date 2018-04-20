@@ -27,18 +27,6 @@ static bool s_pad_pressed[TOUCH_PAD_MAX];
 static uint32_t s_pad_init_val[TOUCH_PAD_MAX];
 static const char* TAG = "Touch pad";
 
-/*void CheckTouch(){
-    return ;
-    //touch_pad_intr_enable();
-    for (int i = 4; i < 7; i++) {
-        if (s_pad_pressed[i] == true) {
-            ESP_LOGI(TAG, "T%d pressed!", i);
-            // Clear information on pad activation
-            s_pad_pressed[i] = false;
-        }
-    }
-}*/
-
 static void tp_set_thresholds(void)
 {
     uint16_t touch_value;
@@ -118,15 +106,13 @@ static void IRAM_ATTR gpio_isr_handler(void* arg)
 
 static void send_help_task(void *pvParams) {
     gpio_handler_param_t *params = pvParams;
-    //web_radio_t *config = params->user_data;
     xQueueHandle gpio_evt_queue = params->gpio_evt_queue;
-
     uint32_t io_num;
     for (;;) {
         if (xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
 	       xTaskCreate(&ts_set_pairable, "setPairableTask", 8192, NULL, 0, NULL);
 	   }
-	   vTaskDelay(20 / portTICK_PERIOD_MS);
+	   vTaskDelay(100 / portTICK_PERIOD_MS);
     }     
 }
 

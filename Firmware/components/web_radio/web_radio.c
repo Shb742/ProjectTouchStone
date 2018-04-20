@@ -144,9 +144,6 @@ static void http_get_task(void *pvParameters)
     callbacks.on_message_complete = on_message_complete_cb;
 
     // blocks until end of stream
-    //playlist_entry_t *curr_track = playlist_curr_track(radio_conf->playlist);
-    //int result = http_client_get(radio_conf->url, &callbacks,radio_conf->player_config);
-    //int result = http_client_get(radio_conf->url, &callbacks,radio_conf->player_config);
     int result = http_client_get(radio_conf->url, &callbacks,radio_conf->player_config);
 
     ts_toggle_heartbeat_allowed(1);
@@ -167,7 +164,6 @@ static void http_get_task(void *pvParameters)
         ESP_LOGI(TAG, "audio completed");
         //Wait to finish playing
     }
-    // ESP_LOGI(TAG, "http_client_get stack: %d\n", uxTaskGetStackHighWaterMark(NULL));
     vTaskDelete(NULL);
 }
 
@@ -200,8 +196,7 @@ void start_web_radio()
     // init web radio
     radio_config = calloc(1, sizeof(web_radio_t));
     if(ts_retrieve_current_message(urlbuf) != 0) strcpy(urlbuf, Default); //if failed to retrieve
-    radio_config->url = urlbuf; //"http://ice1.somafm.com/bootliquor-128-mp3";
-    //playlist_load_pls(radio_config->playlist);
+    radio_config->url = urlbuf;
 
 
     // init player config

@@ -1,0 +1,12 @@
+
+*
+!*/
+!*.*
+build
+*/sdkconfig
+sdkconfig.old
+.vscode
+*.sdkconfig*.*
+A3/sdkconfig*
+*.DS_Store
+A3/sdkconfig*.*

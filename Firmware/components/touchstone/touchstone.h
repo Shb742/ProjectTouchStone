@@ -1,5 +1,8 @@
 #include "cJSON.h"
 
+#define TS_HOST CONFIG_TS_HOST
+#define TS_PORT CONFIG_TS_PORT
+
 cJSON* make_request(char *endpoint);
 void ts_run();
 void ts_toggle_heartbeat_allowed(int state);

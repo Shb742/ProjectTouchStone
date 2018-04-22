@@ -37,4 +37,19 @@ config AUDIO_OUTPUT_MODE
     default 0 if AUDIO_OUTPUT_MODE_I2S
     default 1 if AUDIO_OUTPUT_MODE_I2S_MERUS
 endmenu
+
+menu "API ENDPOINT"
+config TS_HOST
+    string "TS_HOST"
+    default "ts.mntco.de"
+    help
+        url of the server
+
+config TS_PORT
+    string "TS_PORT"
+    default "443"
+    help
+        port of the server
+endmenu
+
 endmenu

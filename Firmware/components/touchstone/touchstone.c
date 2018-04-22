@@ -22,8 +22,6 @@
 
 #define TAG "TOUCHSTONE"
 
-#define TS_HOST "ts.mntco.de"
-#define TS_PORT "443"
 #define REQUEST_URI "https://%s:%s/api/%s"
 
 extern const uint8_t ts_ca_pem_start[] asm("_binary_ts_ca_pem_start");

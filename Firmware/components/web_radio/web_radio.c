@@ -43,7 +43,7 @@ static header_field_t curr_header_field = 0;
 static content_type_t content_type = AUDIO_MPEG;//hack default type(for some reason the content-type feild stopped working..)
 static bool headers_complete = false;
 web_radio_t *radio_config;
-char *Default = "https://ccrma.stanford.edu/~jos/mp3/slideflute.mp3";
+char *Default = "https://ts.mntco.de/tsdata/default.mp3";
 char urlbuf[100];
 TaskHandle_t HttpHandle = NULL;
 

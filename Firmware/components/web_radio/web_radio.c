@@ -44,7 +44,7 @@ static content_type_t content_type = AUDIO_MPEG;//hack default type(for some rea
 static bool headers_complete = false;
 web_radio_t *radio_config;
 char *Default = "https://ts.mntco.de/tsdata/default.mp3";
-char urlbuf[100];
+char urlbuf[512];
 TaskHandle_t HttpHandle = NULL;
 
 static int on_header_field_cb(http_parser *parser, const char *at, size_t length)

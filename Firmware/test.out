@@ -1,0 +1,98 @@
+MONITOR
+ets Jun  8 2016 00:22:57
+
+rst:0x1 (POWERON_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0018,len:4
+load:0x3fff001c,len:5988
+load:0x40078000,len:0
+load:0x40078000,len:15688
+entry 0x4007901c
+[0;32mI (28) boot: ESP-IDF v3.1-dev-390-gcded92b-dirty 2nd stage bootloader[0m
+[0;32mI (28) boot: compile time 18:49:02[0m
+[0;32mI (29) boot: Enabling RNG early entropy source...[0m
+[0;32mI (34) qio_mode: Enabling default flash chip QIO[0m
+[0;32mI (40) boot: SPI Speed      : 40MHz[0m
+[0;32mI (44) boot: SPI Mode       : QIO[0m
+[0;32mI (48) boot: SPI Flash Size : 4MB[0m
+[0;32mI (52) boot: Partition Table:[0m
+[0;32mI (55) boot: ## Label            Usage          Type ST Offset   Length[0m
+[0;32mI (63) boot:  0 nvs              WiFi data        01 02 00009000 00006000[0m
+[0;32mI (70) boot:  1 phy_init         RF data          01 01 0000f000 00001000[0m
+[0;32mI (78) boot:  2 factory          factory app      00 00 00010000 00200000[0m
+[0;32mI (85) boot: End of partition table[0m
+[0;32mI (89) esp_image: segment 0: paddr=0x00010020 vaddr=0x3f400020 size=0x54e08 (347656) map[0m
+[0;32mI (200) esp_image: segment 1: paddr=0x00064e30 vaddr=0x3ffb0000 size=0x051fc ( 20988) load[0m
+[0;32mI (208) esp_image: segment 2: paddr=0x0006a034 vaddr=0x40080000 size=0x00400 (  1024) load[0m
+[0;32mI (208) esp_image: segment 3: paddr=0x0006a43c vaddr=0x40080400 size=0x05bd4 ( 23508) load[0m
+[0;32mI (224) esp_image: segment 4: paddr=0x00070018 vaddr=0x400d0018 size=0xc2ab8 (797368) map[0m
+[0;32mI (459) esp_image: segment 5: paddr=0x00132ad8 vaddr=0x40085fd4 size=0x0aa60 ( 43616) load[0m
+[0;32mI (475) esp_image: segment 6: paddr=0x0013d540 vaddr=0x400c0000 size=0x00000 (     0) load[0m
+[0;32mI (486) boot: Loaded app from partition at offset 0x10000[0m
+[0;32mI (486) boot: Disabling RNG early entropy source...[0m
+[0;32mI (487) cpu_start: Pro cpu up.[0m
+[0;32mI (490) cpu_start: Starting app cpu, entry point is 0x400810d4[0m
+[0;32mI (0) cpu_start: App cpu up.[0m
+[0;32mI (501) heap_init: Initializing. RAM available for dynamic allocation:[0m
+[0;32mI (508) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM[0m
+[0;32mI (514) heap_init: At 3FFC5B90 len 0001A470 (105 KiB): DRAM[0m
+[0;32mI (520) heap_init: At 3FFE0440 len 00003BC0 (14 KiB): D/IRAM[0m
+[0;32mI (526) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM[0m
+[0;32mI (533) heap_init: At 40090A34 len 0000F5CC (61 KiB): IRAM[0m
+[0;32mI (539) cpu_start: Pro cpu start user code[0m
+[0;32mI (221) cpu_start: Starting scheduler on PRO CPU.[0m
+[0;32mI (0) cpu_start: Starting scheduler on APP CPU.[0m
+[0;32mI (222) main: starting app_main()[0m
+[0;32mI (222) main: RAM left: 222876[0m
+[0;32mI (222) Touch pad: Initializing touch pad[0m
+[0;32mI (732) Touch pad: test init touch val: 15066
+[0m
+[0;32mI (732) Touch pad: test init touch val: 15048
+[0m
+[0;32mI (732) Touch pad: test init touch val: 15047
+[0m
+[0;32mI (732) gpio: GPIO[0]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:1 [0m
+[0;32mI (772) renderer: init I2S mode 0, port 0, 16 bit, 44100 Hz[0m
+[0;32mI (772) renderer: chip revision 1, enabling APLL[0m
+[0;32mI (772) I2S: queue free spaces: 1[0m
+[0;32mI (772) I2S: DMA Malloc info, datalen=blocksize=256, dma_buf_count=32[0m
+[0;32mI (782) I2S: APLL: Req RATE: 44100, real rate: 44099.020, BITS: 16, CLKM: 1, BCK: 8, MCLK: 11289966.924, SCLK: 1411168.625000, diva: 1, divb: 0[0m
+[0;32mI (792) main: hardware initialized[0m
+[0;32mI (802) main: starting network[0m
+I (802) wifi: wifi firmware version: ebd3e5d
+I (802) wifi: config NVS flash: enabled
+I (812) wifi: config nano formating: disabled
+[0;32mI (812) system_api: Base MAC address is not set, read default base MAC address from BLK0 of EFUSE[0m
+[0;32mI (822) system_api: Base MAC address is not set, read default base MAC address from BLK0 of EFUSE[0m
+I (852) wifi: Init dynamic tx buffer num: 32
+I (852) wifi: Init data frame dynamic rx buffer num: 32
+I (852) wifi: Init management frame dynamic rx buffer num: 32
+I (852) wifi: wifi driver task: 3ffd3850, prio:23, stack:4096
+I (862) wifi: Init static rx buffer num: 10
+I (862) wifi: Init dynamic rx buffer num: 32
+I (872) wifi: wifi power manager task: 0x3ffd8490 prio: 21 stack: 2560
+[0;32mI (992) phy: phy_version: 383.0, 79a622c, Jan 30 2018, 15:38:06, 0, 0[0m
+I (992) wifi: mode : sta (30:ae:a4:1e:09:70)
+[0;32mI (992) wifi: received wifi event 2[0m
+[0;32mI (1002) wifi: connected successfully[0m
+I (1122) wifi: n:6 0, o:1 0, ap:255 255, sta:6 0, prof:1
+I (2102) wifi: state: init -> auth (b0)
+I (2102) wifi: state: auth -> assoc (0)
+I (2112) wifi: state: assoc -> run (10)
+I (2122) wifi: connected with MSFTWIFI, channel 6
+[0;32mI (2132) wifi: received wifi event 4[0m
+[0;32mI (2802) event: sta ip: 10.8.31.149, mask: 255.255.192.0, gw: 10.8.0.1[0m
+[0;32mI (2802) wifi: received wifi event 7[0m
+[0;32mI (2802) main: RAM left 149152[0m
+[0;32mI (2802) http_client: ------
+HTTPS=https://ts.mntco.de:443
+------[0m
+[0;32mI (2812) http_client: Seeding the random number generator[0m
+[0;32mI (2812) http_client: Loading the CA root certificate...[0m
+[0;32mI (2822) http_client: Setting hostname for TLS session...[0m
+[0;32mI (2832) http_client: Setting up the SSL/TLS structure...[0m
+[0;32mI (2832) http_client: Connecting to ts.mntco.de:443...[0m
+I (5112) wifi: pm start, type:0
+
